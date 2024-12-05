@@ -18,7 +18,7 @@ add_executable(Clouds main.cpp
 
 # Include the glm directory and stb directory
 add_subdirectory(glm)
-target_include_directories(GLMExample PRIVATE ${CMAKE_SOURCE_DIR}/stb)
+target_include_directories(Clouds PRIVATE ${CMAKE_SOURCE_DIR}/stb)
 
 # Optionally enable optimizations for better performance
 if(NOT CMAKE_BUILD_TYPE)
