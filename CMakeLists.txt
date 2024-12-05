@@ -6,14 +6,14 @@ project(Clouds)
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_compile_options(-Wno-deprecated-declarations)
 
-# Add the main executable
+
+# Add the main executable and necessary source files
 add_executable(Clouds main.cpp
     camera.cpp
     camera.h
-    rgba.h
-    stb_image_write.h
-    backend.h)
+    rgba.h)
 
 # Include the glm headers
 # Assuming glm is a header-only library located in the glm directory
