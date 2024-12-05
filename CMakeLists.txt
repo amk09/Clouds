@@ -6,12 +6,19 @@ project(GLMExample)
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_compile_options(-Wno-deprecated-declarations)
 
-# Add the main executable
-add_executable(GLMExample main.cpp)
 
-# Include the glm directory
+# Add the main executable and necessary source files
+add_executable(Clouds main.cpp
+    camera.cpp
+    camera.h
+    src/rgba.cpp)
+
+
+# Include the glm directory and stb directory
 add_subdirectory(glm)
+target_include_directories(GLMExample PRIVATE ${CMAKE_SOURCE_DIR}/stb)
 
 # Optionally enable optimizations for better performance
 if(NOT CMAKE_BUILD_TYPE)
