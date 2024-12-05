@@ -2,13 +2,14 @@
 #include "camera.h"
 #include <iostream>
 #include "rgba.h"
+#include "backend.h"
 
 int main()
 {
     Camera camera;
-    std::vector<RGBA> Image;
-    int height = 1000, width = 1000;
 
+    int height = 1000, width = 1000;
+    std::vector<RGBA> Image(width * height, RGBA(0, 0, 0, 255));
     float k = .1f;
     float horizontal_angle = 30.0;
     float V = 2 * k * glm::tan(horizontal_angle/2);
@@ -24,10 +25,12 @@ int main()
 
             glm::vec4 uvk(U*x,V*y,-k,1.f);
 
-            glm::vec4 eye(0.f,0.f,0.f,1.f); // the eye will always be at 0,0,0,1 because you are in camera co-ordinate space.
+            glm::vec4 eye(0.f,0.f,0.f,1.f);
             glm::vec4 raydir = glm::normalize((uvk-eye));
             glm::vec4 worldEye = camera.getViewMatrixInverse() * eye;
             glm::vec4 worldRayDir = glm::normalize(camera.getViewMatrixInverse() * raydir); // to world space
-
+            if(i==j)
+                Image[j * width + i] = RGBA(255,255,255,255);
         }
+    saveImage(Image);
 }

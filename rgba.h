@@ -6,10 +6,9 @@
 #include <cstdint>
 
 struct RGBA {
-    std::uint8_t r;
-    std::uint8_t g;
-    std::uint8_t b;
-    std::uint8_t a = 255;
-};
+    unsigned char r, g, b, a;
 
+    RGBA(unsigned char red = 0, unsigned char green = 0, unsigned char blue = 0, unsigned char alpha = 255)
+        : r(red), g(green), b(blue), a(alpha) {}
+};
 #endif // RGBA_H
