@@ -10,7 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Add the main executable
 add_executable(Clouds main.cpp
     camera.cpp
-    camera.h)
+    camera.h
+    rgba.h)
 
 # Include the glm headers
 # Assuming glm is a header-only library located in the glm directory

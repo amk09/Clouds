@@ -1,10 +1,33 @@
 #include "glm/gtx/transform.hpp"
 #include "camera.h"
 #include <iostream>
+#include "rgba.h"
 
 int main()
 {
-    Camera c;
-    glm::vec3 x = glm::vec3(1.f);
-    std::cout<<c.getViewMatrix()[1][1];
+    Camera camera;
+    std::vector<RGBA> Image;
+    int height = 1000, width = 1000;
+
+    float k = .1f;
+    float horizontal_angle = 30.0;
+    float V = 2 * k * glm::tan(horizontal_angle/2);
+    float U = (width * V)/height;
+
+    // need an RGBA *imageData
+
+    for (int j = 0; j<height ; j++)
+        for (int i = 0 ; i<width ; i++)
+        {
+            float x = ((i + 0.5)/width)-0.5;
+            float y = ((height - 1 - j + 0.5)/height)-0.5;
+
+            glm::vec4 uvk(U*x,V*y,-k,1.f);
+
+            glm::vec4 eye(0.f,0.f,0.f,1.f); // the eye will always be at 0,0,0,1 because you are in camera co-ordinate space.
+            glm::vec4 raydir = glm::normalize((uvk-eye));
+            glm::vec4 worldEye = camera.getViewMatrixInverse() * eye;
+            glm::vec4 worldRayDir = glm::normalize(camera.getViewMatrixInverse() * raydir); // to world space
+
+        }
 }
