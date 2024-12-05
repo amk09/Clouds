@@ -1,6 +1,7 @@
 #include "glm/gtx/transform.hpp"
 #include <iostream>
 #include "src/rgba.h"
+#include "camera.h"
 #include <iostream>
 #include <algorithm>
 #include <fstream>
