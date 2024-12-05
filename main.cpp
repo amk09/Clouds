@@ -13,6 +13,9 @@ int main()
 {   
     // glm::vec3 x = glm::vec3(1.f);
     // std::cout<<x[1];
+    Camera c;
+    glm::vec3 x = glm::vec3(1.f);
+    std::cout<<c.getViewMatrix()[1][1];
     const int width = 256;  
     const int height = 256; 
 
