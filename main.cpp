@@ -1,10 +1,9 @@
 #include "glm/gtx/transform.hpp"
 #include <iostream>
-#include "src/rgba.h"
 #include "camera.h"
 #include <iostream>
-#include "rgba.h"
-#include "backend.h"
+#include "src/rgba.h"
+#include "src/backend.h"
 
 int main()
 {

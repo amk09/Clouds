@@ -13,7 +13,9 @@ add_compile_options(-Wno-deprecated-declarations)
 add_executable(Clouds main.cpp
     camera.cpp
     camera.h
-    rgba.h)
+    src/rgba.h
+    src/backend.h
+    src/stb_image_write.h)
 
 # Include the glm headers
 # Assuming glm is a header-only library located in the glm directory
