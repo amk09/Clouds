@@ -77,11 +77,13 @@ glm::vec3 sphere(glm::vec4 raydir, glm::vec4 eye, glm::vec3 pos)
 // Updated Color function to use convertVec3RGBA
 RGBA Color(glm::vec4 origin, glm::vec4 direction)
 {
+    Light lights(glm::vec3(-1, 1, -10.f), glm::vec3(1.0f,1.0f,1.0f), 0.2f);
+    Light lights2(glm::vec3(-1,0,-20.f),glm::vec3(1.0f,0.0f,0.0f), 0.2f);
     glm::vec3 sphere1Color = sphere(direction, origin, glm::vec3(0, 0, -10.f));
     glm::vec3 sphere2Color = sphere(direction, origin, glm::vec3(5, 5, -20.f));
-    glm::vec3 light = lightSphereWithGlow(direction, origin, glm::vec3(-1, 1, -10.f), glm::vec3(1.0f,1.0f,1.0f), 0.2f);
+    glm::vec3 light = lights.lightSphereWithGlow(direction, origin);
 
-    glm::vec3 combinedColor = sphere1Color + sphere2Color + light;
+    glm::vec3 combinedColor = sphere1Color + sphere2Color + light + lights2.lightSphereWithGlow(direction,origin);
 
     return convertVec3RGBA(combinedColor);
 }

@@ -36,7 +36,7 @@ int main()
             glm::vec4 worldRayDir = glm::normalize(camera.getViewMatrixInverse() * raydir); // to world space
 
             // Assign the computed color to the pixel
-            Image[j * width + i] = Color(worldEye, worldRayDir);
+            Image[j * width + i] = Color(worldEye, worldRayDir) ;
         }
     }
 
