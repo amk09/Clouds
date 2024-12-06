@@ -5,6 +5,26 @@
 #include "camera.h"
 #include "glm/glm.hpp"
 
+RGBA raymarching(glm::vec4 raydir, glm::vec4 eye, float t1, float t2)
+{
+
+    int x(0),y(0),z(0);
+    for(t1; t1<t2;t1+=0.1f)
+    {   
+        x++;
+        y++;
+        z++;
+    }
+    if(x>255)
+        x = 255;
+    if(y>255)
+        y = 255;
+    if(z>255)
+        z = 255;
+
+    return RGBA(x,y,z);
+}
+
 RGBA sphere(glm::vec4 raydir, glm::vec4 eye, glm::vec3 pos)
 {
     glm::mat4 ctm = glm::translate(glm::mat4(1.0f), pos);
@@ -34,9 +54,10 @@ RGBA sphere(glm::vec4 raydir, glm::vec4 eye, glm::vec3 pos)
     float t;
     if (t1 >= 0 && t2 >= 0)
     {
-        float diameter = 2 * r;
-        float value = (t2-t1)/(diameter*5);
-        return RGBA(255* value,255* value,255 * value,255);
+        // float diameter = 2 * r;
+        // float value = (t2-t1)/(diameter*5);
+        // return RGBA(255* value,255* value,255 * value,255);
+        return raymarching(raydir,eye,t1,t2);
     }
     else
     {
