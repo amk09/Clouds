@@ -3,7 +3,7 @@
 
 #include "src/rgba.h"
 #include "camera.h"
-#include "glm.hpp"
+#include "glm/glm.hpp"
 
 RGBA sphere(glm::vec4 raydir, glm::vec4 eye, glm::vec3 pos)
 {
