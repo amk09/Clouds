@@ -49,10 +49,13 @@ int main()
 
     // OpenMP parallel loop
     #pragma omp parallel for collapse(2) schedule(dynamic)
-    for (int j = 0; j < height; j++) {
-        for (int i = 0; i < width; i++) {
-            float x = ((i + 0.5f) / width) - 0.5f;
-            float y = ((height - 1 - j + 0.5f) / height) - 0.5f;
+    
+    for (int j = 0; j < height; j++)
+    {
+        for (int i = 0; i < width; i++)
+        {
+            float x = ((i + 0.5) / width) - 0.5;
+            float y = ((height - 1 - j + 0.5) / height) - 0.5;
 
             // Adjust uvk for the camera's distance
             glm::vec4 uvk(U * x, V * y, -k, 1.f);
@@ -61,7 +64,7 @@ int main()
             glm::vec4 worldRayDir = glm::normalize(camera.getViewMatrixInverse() * raydir); // Convert to world space
 
             // Assign the computed color to the pixel
-            Image[j * width + i] = raymarchCloud(glm::vec3(worldEye), glm::vec3(worldRayDir), cloud, lightDir, lightColor, backgroundColor);
+            Image[j * width + i] = Color(worldEye, worldRayDir) ;
         }
     }
 

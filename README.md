@@ -1,4 +1,8 @@
 # Clouds
+
+Current output : 
+
+<img src="output.png"></img>
 ```
 mkdir build
 cd build
