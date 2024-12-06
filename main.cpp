@@ -23,6 +23,7 @@ int main()
 
     // OpenMP parallel loop
     #pragma omp parallel for collapse(2) schedule(dynamic)
+    
     for (int j = 0; j < height; j++)
     {
         for (int i = 0; i < width; i++)
