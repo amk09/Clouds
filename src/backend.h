@@ -7,7 +7,7 @@
 #include "stb_image_write.h"
 #include "rgba.h"
 
-void saveImage(std::vector<RGBA> Image)
+bool saveImage(std::vector<RGBA> Image)
 {
     std::vector<unsigned char> pixelData;
     for (const auto& pixel : Image) {
@@ -17,7 +17,8 @@ void saveImage(std::vector<RGBA> Image)
         pixelData.push_back(pixel.a);
     }
 
-    stbi_write_png("output.png", 1000, 1000, 4, pixelData.data(), 1000 * 4);
+    int result = stbi_write_png("output.png", 1000, 1000, 4, pixelData.data(), 1000 * 4);
+    return result != 0;
 }
 
 #endif // BACKEND_H
