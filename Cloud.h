@@ -7,22 +7,27 @@
 
 RGBA raymarching(glm::vec4 raydir, glm::vec4 eye, float t1, float t2)
 {
+    int x = 0, y = 0, z = 0;
+    float step = 0.1f;
 
-    int x(0),y(0),z(0);
-    for(t1; t1<t2;t1+=0.1f)
-    {   
+    // Parallel loop with reduction for independent accumulation
+    #pragma omp parallel for reduction(+:x, y, z)
+    for (int i = 0; i < static_cast<int>((t2 - t1) / step); i++)
+    {
+        float t = t1 + i * step;
+
+        // Simulate some operations
         x++;
         y++;
         z++;
     }
-    if(x>255)
-        x = 255;
-    if(y>255)
-        y = 255;
-    if(z>255)
-        z = 255;
 
-    return RGBA(x,y,z);
+    // Clamp values to 255
+    x = std::min(x, 255);
+    y = std::min(y, 255);
+    z = std::min(z, 255);
+
+    return RGBA(x, y, z);
 }
 
 RGBA sphere(glm::vec4 raydir, glm::vec4 eye, glm::vec3 pos)
@@ -69,7 +74,10 @@ RGBA sphere(glm::vec4 raydir, glm::vec4 eye, glm::vec3 pos)
 
 RGBA Color(glm::vec4 origin, glm::vec4 direction)
 {
-    return sphere(direction,origin,glm::vec3(0,0,-5.f));
+    RGBA x = sphere(direction,origin,glm::vec3(0,0,-10.f));
+    RGBA y = sphere(direction,origin,glm::vec3(5,5,-20.f));
+
+    return RGBA(x.r + y.r, x.g + y.g, x.b + y.b);
 }
 
 #endif // CLOUD_H
