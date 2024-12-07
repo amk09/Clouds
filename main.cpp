@@ -110,7 +110,7 @@ int main()
     glm::vec3 startPos = glm::vec3(0.f,-3.f,-10.f);   // at camera
     glm::vec3 endPos   = glm::vec3(0.f,5.f,-10.f); // well beyond the cloud center
     glm::vec3 dir = glm::normalize(endPos - startPos);
-    int totalFrames = 10;
+    int totalFrames = 1;
     glm::vec3 red(1.0f, 0.0f, 0.0f);
     glm::vec3 orange(1.0f, 0.5f, 0.0f);
     glm::vec3 white(1.0f, 1.0f, 1.0f);

@@ -5,6 +5,9 @@
 #include "glm/gtc/noise.hpp"
 
 
+
+
+
 Cloud::Cloud(glm::vec3 center, float length, float breadth, float height, float densityOffset, float densityMultiplier, float lightAbsorption)
     : center(center),
       length(length),
@@ -15,6 +18,41 @@ Cloud::Cloud(glm::vec3 center, float length, float breadth, float height, float 
       lightAbsorption(lightAbsorption),
       numSteps(32),
       numStepsLight(16) {}
+
+
+glm::vec4 Cloud::cloudsFbm(const glm::vec3& pos, float time) const {
+    glm::vec3 offset = glm::vec3(2.0f, 1.1f, 1.0f) + 0.07f * glm::vec3(time, 0.5f * time, -0.15f * time);
+    glm::vec3 scaledPos = pos * 0.0015f + offset;
+
+    // Simulate FBM: multiple octaves of Perlin noise
+    float base = glm::perlin(scaledPos);
+    float finer = 0.5f * glm::perlin(scaledPos * 2.0f);
+    float finest = 0.25f * glm::perlin(scaledPos * 4.0f);
+
+    return glm::vec4(base + finer + finest, finer, finest, 0.0f); // Include gradient hints
+}
+
+glm::vec4 Cloud::cloudsMap(const glm::vec3& pos, float time, float& nearestDensity) const {
+    // Base height perturbation
+    float d = abs(pos.y - 900.0f) - 40.0f;
+    glm::vec3 gradient = glm::vec3(0.0f, glm::sign(pos.y - 900.0f), 0.0f);
+
+    // Noise-based perturbation
+    glm::vec4 fbmNoise = cloudsFbm(pos, time);
+    d += 400.0f * fbmNoise.x * (0.7f + 0.3f * gradient.y);
+
+    // If outside the cloud
+    if (d > 0.0f) return glm::vec4(-d, 0.0f, 0.0f, 0.0f);
+
+    nearestDensity = -d; // Store distance to the cloud boundary
+    d = glm::min(-d / 100.0f, 0.25f);
+
+    // Apply noise perturbations to gradient
+    gradient += 0.1f * glm::vec3(fbmNoise.y, fbmNoise.z, fbmNoise.w) * (0.7f + 0.3f * gradient.y);
+
+    return glm::vec4(d, gradient);
+}
+
 
 float Cloud::sampleDensity(glm::vec3 position) const 
 {
@@ -35,6 +73,10 @@ float Cloud::sampleDensity(glm::vec3 position) const
 
     return density;
 }
+
+
+
+
 
 // float Cloud::lightMarch(glm::vec3 position, glm::vec3 LightPos) const {
 //     glm::vec3 currentPos = position;
