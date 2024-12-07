@@ -50,19 +50,19 @@ public:
             return glm::clamp(glowIntensity, 0.0f, 1.0f);
         };
 
-        if (discriminant < 0)
-        {
-            // No intersection with the sphere surface.
-            // Compute how close the ray passes to the sphere center.
-            glm::vec3 centerToOrigin = pos - rayOrigin;
-            float projection = glm::dot(centerToOrigin, rayDirWorld);
-            glm::vec3 closestPoint = rayOrigin + projection * rayDirWorld;
-            float distanceToCenter = glm::length(pos - closestPoint);
+        // if (discriminant < 0)
+        // {
+        //     // No intersection with the sphere surface.
+        //     // Compute how close the ray passes to the sphere center.
+        //     glm::vec3 centerToOrigin = pos - rayOrigin;
+        //     float projection = glm::dot(centerToOrigin, rayDirWorld);
+        //     glm::vec3 closestPoint = rayOrigin + projection * rayDirWorld;
+        //     float distanceToCenter = glm::length(pos - closestPoint);
 
-            // Compute and apply glow intensity
-            float glowIntensity = computeGlowIntensity(distanceToCenter);
-            return emissionColor * glowIntensity;
-        }
+        //     // Compute and apply glow intensity
+        //     float glowIntensity = computeGlowIntensity(distanceToCenter);
+        //     return emissionColor * glowIntensity;
+        // }
 
         float sqrtDiscriminant = glm::sqrt(discriminant);
         float t1 = (-B - sqrtDiscriminant) / (2.0f * A);
@@ -72,19 +72,24 @@ public:
         if (t1 >= 0.0f && t2 >= 0.0f)
         {
             // At intersection, the sphere is bright (like a light bulb core)
+            // float distanceToCenter = glm::length(pos - closestPoint);
+            // float glowIntensity = computeGlowIntensity(distanceToCenter);
+
             return emissionColor * 2.0f;
         }
-        else
-        {
-            // Ray grazes or misses the sphere - calculate glow again
-            glm::vec3 centerToOrigin = pos - rayOrigin;
-            float projection = glm::dot(centerToOrigin, rayDirWorld);
-            glm::vec3 closestPoint = rayOrigin + projection * rayDirWorld;
-            float distanceToCenter = glm::length(pos - closestPoint);
+        // else
+        // {
+        //     // Ray grazes or misses the sphere - calculate glow again
+        //     glm::vec3 centerToOrigin = pos - rayOrigin;
+        //     float projection = glm::dot(centerToOrigin, rayDirWorld);
+        //     glm::vec3 closestPoint = rayOrigin + projection * rayDirWorld;
+        //     float distanceToCenter = glm::length(pos - closestPoint);
 
-            float glowIntensity = computeGlowIntensity(distanceToCenter);
-            return emissionColor * glowIntensity;
-        }
+        //     float glowIntensity = computeGlowIntensity(distanceToCenter);
+        //     return emissionColor * glowIntensity;
+        // }
+
+        return glm::vec3(0.f,0.f,0.f);
     }
 };
 

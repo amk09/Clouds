@@ -73,7 +73,7 @@ float Cloud::lightMarch(glm::vec3 position, glm::vec3 LightPos, float radius) co
     // Compute attenuation using an inverse-square law
     // For a point light, intensity typically falls off as 1 / (distance^2).
     // Adding 1.0 to avoid division by zero at very small distances and to set a baseline intensity.
-    float distanceAttenuation = 2.0f / (1.0f + dist);
+    float distanceAttenuation = 1.0f / (1.0f + dist + dist*dist);
 
     float transmittance = exp(-totalDensity * lightAbsorption * 1.2f) * distanceAttenuation;
 
@@ -128,8 +128,11 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
 
     //start ray marching.
     // Ray intersects the box; start ray tracing within the box
-    glm::vec3 entryPoint = rayOrigin + tMin * rayDir;
-    glm::vec3 exitPoint = rayOrigin + tMax * rayDir;
+    // glm::vec3 entryPoint = rayOrigin + tMin * rayDir;
+    // glm::vec3 exitPoint = rayOrigin + tMax * rayDir;
+
+    glm::vec3 entryPoint = center - glm::vec3(length, breadth, height) * 0.5f;
+    glm::vec3 exitPoint = center + glm::vec3(length, breadth, height) * 0.5f;
 
 
 
@@ -138,7 +141,8 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
     glm::vec3 lightEnergy(0.0f);
     float dstTravelled = 0.0f;
 
-    while (dstTravelled < glm::length(entryPoint - exitPoint)) {
+    while (dstTravelled < glm::length(glm::vec3(length, breadth, height))){
+    // while (dstTravelled < glm::length(entryPoint - exitPoint)) {
         glm::vec3 rayPos = entryPoint + rayDir * dstTravelled;
         float density = sampleDensity(rayPos);
 
@@ -164,3 +168,6 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
 
     return finalColor;
 }
+
+
+
