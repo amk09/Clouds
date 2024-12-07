@@ -54,14 +54,12 @@ float Cloud::sampleDensity(glm::vec3 position) const
 //     return transmittance;
 // }
 
-float Cloud::lightMarch(glm::vec3 position, glm::vec3 LightPos) const {
+float Cloud::lightMarch(glm::vec3 position, glm::vec3 LightPos, float radius) const {
     glm::vec3 dirToLight = glm::normalize(LightPos - position);
     float stepSize = glm::length(glm::vec3(length, breadth, height)) / float(numStepsLight);
 
-    // We'll accumulate total density in parallel
     float totalDensity = 0.0f;
 
-    // Parallelize the loop
     #pragma omp parallel for reduction(+:totalDensity)
     for (int i = 0; i < numStepsLight; ++i) {
         glm::vec3 samplePos = position + float(i) * stepSize * dirToLight;
@@ -69,16 +67,22 @@ float Cloud::lightMarch(glm::vec3 position, glm::vec3 LightPos) const {
         totalDensity += density;
     }
 
-    // Compute transmittance after summation
-    float dist = glm::distance(LightPos, position + (float)(numStepsLight-1)*stepSize*dirToLight);
-    float transmittance = exp(-totalDensity * lightAbsorption * 1.2f) / dist;
+    // Compute distance to the last sampling point (approximately representing the distance along the light ray)
+    float dist = glm::distance(LightPos, position + (float)(numStepsLight - 1) * stepSize * dirToLight) - radius;
+
+    // Compute attenuation using an inverse-square law
+    // For a point light, intensity typically falls off as 1 / (distance^2).
+    // Adding 1.0 to avoid division by zero at very small distances and to set a baseline intensity.
+    float distanceAttenuation = 2.0f / (1.0f + dist);
+
+    float transmittance = exp(-totalDensity * lightAbsorption * 1.2f) * distanceAttenuation;
 
     return transmittance;
 }
 
 
 
-glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDir, const glm::vec3& lightPos, const glm::vec3& lightColor, const glm::vec3& backgroundColor) const 
+glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDir, const glm::vec3& lightPos, const glm::vec3& lightColor, const glm::vec3& backgroundColor, float radius) const 
 {
     //check if the ray hits the box
     
@@ -139,7 +143,7 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
         float density = sampleDensity(rayPos);
 
         if (density > 0.0f) {
-            float lightTransmittance = lightMarch(rayPos, lightPos);
+            float lightTransmittance = lightMarch(rayPos, lightPos, radius);
 
             // Accumulate light energy
             lightEnergy += density * stepSize * transmittance * lightTransmittance * lightColor;
