@@ -13,6 +13,6 @@ cmake --build .
 
 
 ```bash
-clang++ -fopenmp --std=c++11 -stdlib=libc++ main.cpp camera.cpp -o main
+clang++ -fopenmp --std=c++11 -stdlib=libc++ -Wno-deprecated-declarations main.cpp camera.cpp Cloud.cpp -o main
 ./main
 ```

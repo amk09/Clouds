@@ -25,13 +25,13 @@ int main()
     float U = (width * V) / height;
 
     glm::vec4 worldEye = camera.getViewMatrixInverse() * camera.pos;
-    Light light1(glm::vec3(0.f,-9.f,-0.f), glm::vec3(1.0f,0.0f,0.0f), 0.2f);
+    Light light1(glm::vec3(0.f,-10.f,-0.f), glm::vec3(1.0f,1.0f,0.0f), 0.2f);
 
     float length = 10.0f, breadth = 10.0f, h = 10.0f;
     float densityOffset = 0.1f, densityMultiplier = 0.8f, lightAbsorption  = 0.1f;
 
-    glm::vec3 lightColor(1.0f, 1.0f, 1.0f);                              
-    glm::vec3 backgroundColor(0.5f, 0.7f, 1.0f); 
+                            
+    glm::vec3 backgroundColor(0.0f, 0.0f, 0.0f); 
 
     Cloud cloud(cloudCenter, length, breadth, h, densityOffset, densityMultiplier, lightAbsorption); 
 
@@ -50,9 +50,7 @@ int main()
             glm::vec4 raydir = glm::normalize((uvk - camera.pos));
             glm::vec4 worldRayDir = glm::normalize(camera.getViewMatrixInverse() * raydir); // to world space
 
-            // Assign the computed color to the pixel
-            // Image[j * width + i] = Color(worldEye, worldRayDir) ;
-             Image[j * width + i] =  convertVec3RGBA( cloud.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), light1.pos, light1.emissionColor, backgroundColor) + light1.lightSphereWithGlow(worldRayDir,worldEye));
+            Image[j * width + i] =  convertVec3RGBA( cloud.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), light1.pos, light1.emissionColor, backgroundColor) + light1.lightSphereWithGlow(worldRayDir,worldEye));
         }
     }
 
