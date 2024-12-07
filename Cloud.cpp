@@ -36,21 +36,43 @@ float Cloud::sampleDensity(glm::vec3 position) const
     return density;
 }
 
+// float Cloud::lightMarch(glm::vec3 position, glm::vec3 LightPos) const {
+//     glm::vec3 currentPos = position;
+//     glm::vec3 dirToLight = glm::normalize(LightPos - currentPos);
+//     float stepSize = glm::length(glm::vec3(length, breadth, height)) / float(numStepsLight);
+//     float totalDensity = 0.0f;
+
+//     for (int i = 0; i < numStepsLight; ++i) {
+//         totalDensity += sampleDensity(currentPos) * stepSize;
+//         currentPos += dirToLight * stepSize;
+
+//         if (exp(-totalDensity * lightAbsorption) < 0.01f)
+//             break;
+//     }
+
+//     float transmittance = exp(-totalDensity * lightAbsorption * 1.2f)/(glm::distance(LightPos,currentPos));
+//     return transmittance;
+// }
+
 float Cloud::lightMarch(glm::vec3 position, glm::vec3 LightPos) const {
-    glm::vec3 currentPos = position;
-    glm::vec3 dirToLight = glm::normalize(LightPos - currentPos);
+    glm::vec3 dirToLight = glm::normalize(LightPos - position);
     float stepSize = glm::length(glm::vec3(length, breadth, height)) / float(numStepsLight);
+
+    // We'll accumulate total density in parallel
     float totalDensity = 0.0f;
 
+    // Parallelize the loop
+    #pragma omp parallel for reduction(+:totalDensity)
     for (int i = 0; i < numStepsLight; ++i) {
-        totalDensity += sampleDensity(currentPos) * stepSize;
-        currentPos += dirToLight * stepSize;
-
-        if (exp(-totalDensity * lightAbsorption) < 0.01f)
-            break;
+        glm::vec3 samplePos = position + float(i) * stepSize * dirToLight;
+        float density = sampleDensity(samplePos) * stepSize;
+        totalDensity += density;
     }
 
-    float transmittance = exp(-totalDensity * lightAbsorption * 1.2f);
+    // Compute transmittance after summation
+    float dist = glm::distance(LightPos, position + (float)(numStepsLight-1)*stepSize*dirToLight);
+    float transmittance = exp(-totalDensity * lightAbsorption * 1.2f) / dist;
+
     return transmittance;
 }
 
@@ -104,6 +126,8 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
     // Ray intersects the box; start ray tracing within the box
     glm::vec3 entryPoint = rayOrigin + tMin * rayDir;
     glm::vec3 exitPoint = rayOrigin + tMax * rayDir;
+
+
 
     float stepSize = glm::length(glm::vec3(length, breadth, height)) / float(numSteps);
     float transmittance = 1.0f;

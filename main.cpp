@@ -25,13 +25,13 @@ int main()
     float U = (width * V) / height;
 
     glm::vec4 worldEye = camera.getViewMatrixInverse() * camera.pos;
-    Light light1(glm::vec3(0.f,-10.f,-0.f), glm::vec3(1.0f,1.0f,0.0f), 0.2f);
+    Light light1(glm::vec3(10.f,-10.f,-0.f), glm::vec3(1.0f,1.0f,0.0f), 0.2f);
 
-    float length = 10.0f, breadth = 10.0f, h = 10.0f;
+    float length = 20.0f, breadth = 20.0f, h = 20.0f;
     float densityOffset = 0.1f, densityMultiplier = 0.8f, lightAbsorption  = 0.1f;
 
                             
-    glm::vec3 backgroundColor(0.0f, 0.0f, 0.0f); 
+    glm::vec3 backgroundColor(0.0f, 0.00f, 0.0f); 
 
     Cloud cloud(cloudCenter, length, breadth, h, densityOffset, densityMultiplier, lightAbsorption); 
 
