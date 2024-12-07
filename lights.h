@@ -16,6 +16,8 @@ public:
     Light(const glm::vec3 &position, const glm::vec3 &color, float rad)
         : pos(position), emissionColor(color), radius(rad) {}
 
+    // glm::vec3 direction()
+
     // Member function for computing the glow effect
     glm::vec3 lightSphereWithGlow(const glm::vec4 &raydir, const glm::vec4 &eye) const
     {
