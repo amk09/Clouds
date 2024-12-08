@@ -7,7 +7,8 @@
 #include "stb_image_write.h"
 #include "rgba.h"
 
-bool saveImage(const std::vector<RGBA>& Image, const std::string& filename, int width = 1000, int height = 1000) {
+void saveImage(std::vector<RGBA> Image, const std::string& filename)
+{
     std::vector<unsigned char> pixelData;
     for (const auto& pixel : Image) {
         pixelData.push_back(pixel.r);
@@ -16,10 +17,7 @@ bool saveImage(const std::vector<RGBA>& Image, const std::string& filename, int 
         pixelData.push_back(pixel.a);
     }
 
-    // Use stb_image_write to save the image as PNG
-    int result = stbi_write_png(filename.c_str(), width, height, 4, pixelData.data(), width * 4);
-    
-    return result != 0; // Return true if saving was successful
+    stbi_write_png(filename.c_str(), 1280, 720, 4, pixelData.data(), 1280 * 4);
 }
 
 #endif // BACKEND_H
