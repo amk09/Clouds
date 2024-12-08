@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream>
 
+
 //New edit: added shapeOffset attribute. 
 // To use it, in the main function, after the line float densityOffset = 0.5f, densityMultiplier = 1.2f, lightAbsorption = 0.5f;
 //add the following: 
@@ -42,6 +43,7 @@
 
 
 Cloud::Cloud(glm::vec3 center, float length, float breadth, float height, float densityOffset, glm::vec3 shapeOffset, float densityMultiplier, float lightAbsorption)
+
     : center(center),
       length(length),
       breadth(breadth),
@@ -52,6 +54,7 @@ Cloud::Cloud(glm::vec3 center, float length, float breadth, float height, float 
       lightAbsorption(lightAbsorption),
       numSteps(32),
       numStepsLight(16) {}
+
 
 float remap(float value, float inMin, float inMax, float outMin, float outMax) {
     // Map the value from [inMin, inMax] to [outMin, outMax]
@@ -83,6 +86,7 @@ float Cloud::sampleDensity(glm::vec3 position) const
 
 
 
+
 float Cloud::lightMarch(glm::vec3 position, glm::vec3 LightPos, float radius) const {
     glm::vec3 dirToLight = glm::normalize(LightPos - position);
     float stepSize = glm::length(glm::vec3(length, breadth, height)) / float(numStepsLight);
@@ -109,12 +113,8 @@ float Cloud::lightMarch(glm::vec3 position, glm::vec3 LightPos, float radius) co
     float distanceAttenuation = a / (b + (c * dist) + d * dist*dist);
 
     float transmittance = exp(-totalDensity * lightAbsorption * 1.2f) * distanceAttenuation;
-
     return transmittance;
 }
-
-
-
 
 
 const glm::mat2 m2 = glm::mat2(  0.80,  0.60,
@@ -236,6 +236,7 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
 
     //check if the ray hits the box
     bool hit = true;
+
     // Define the bounding box limits
     glm::vec3 minBounds = center - glm::vec3(length, breadth, height) * 0.5f;
     glm::vec3 maxBounds = center + glm::vec3(length, breadth, height) * 0.5f;
@@ -253,6 +254,7 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
 
     if ((tMin > tyMax) || (tyMin > tMax)) {
        hit= false; // No intersection, return background color
+
     }
 
     tMin = glm::max(tMin, tyMin);
@@ -264,6 +266,7 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
     if (tzMin > tzMax) std::swap(tzMin, tzMax);
 
     if ((tMin > tzMax) || (tzMin > tMax)) {
+
         hit = false; // No intersection, return background color
     }
 
@@ -284,6 +287,7 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
 
 
 
+
     //start ray marching.
     // Ray intersects the box; start ray tracing within the box
     glm::vec3 entryPoint = rayOrigin + tMin * rayDir;
@@ -295,10 +299,12 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
     // glm::vec3 exitPoint = center + glm::vec3(length, breadth, height) * 0.5f;
 
 
+
     float stepSize = glm::length(glm::vec3(length, breadth, height)) / float(numSteps);
     float transmittance = 1.0f;
     glm::vec3 lightEnergy(0.0f);
     float dstTravelled = 0.0f;
+
 
     //while (dstTravelled < glm::length(glm::vec3(length, breadth, height))){
     while (dstTravelled < glm::length(entryPoint - exitPoint)) {
@@ -307,6 +313,7 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
 
         if (density > 0.0f) {
             float lightTransmittance = lightMarch(rayPos, lightPos, radius);
+
 
             // Accumulate light energy
             lightEnergy += density * stepSize * transmittance * lightTransmittance * lightColor;
@@ -323,9 +330,11 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
     }
 
 
+
     glm::vec3 cloudColor = lightEnergy;
           //agian, can repace col w. background color as before
     glm::vec3 finalColor = col * transmittance + cloudColor;
+
 
     return finalColor;
 }
