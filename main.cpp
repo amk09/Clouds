@@ -1,71 +1,3 @@
-// #include "glm/gtx/transform.hpp"
-// #include <iostream>
-// #include <vector>
-// #include "camera.h"
-// #include "src/rgba.h"
-// #include "src/backend.h"
-// #include "Cloud.h"
-// #include "lights.h"
-
-
-// int main()
-// {
-//     int height = 1080, width = 1920;
-//     std::vector<RGBA> Image(width * height, RGBA(0, 0, 0, 255));
-
-//     glm::vec3 cloudCenter(0.0f, 0.0f, -10.f); 
-
-//     Camera camera;
-//     // camera.pos = glm::vec4(30.0f, 20.0f, 30.0f, 1.0f); // Position the camera
-//     camera.pos = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-//     // camera.look = glm::normalize(glm::vec4(cloudCenter, 1.0f) - camera.pos); // Look at the cloud box
-//     camera.look = glm::normalize(glm::vec4(0.0f,0.f,-1.f,0.f));
-
-//     camera.up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f); // Keep the camera upright
-
-//     // float k = glm::length(glm::vec3(camera.pos - glm::vec4(0.0f)));
-//     float k = 0.1f;
-//     float horizontal_angle = 45.0;
-//     float V = 2 * k * glm::tan(glm::radians(horizontal_angle / 2));
-//     float U = (width * V) / height;
-
-//     glm::vec4 worldEye = camera.getViewMatrixInverse() * camera.pos;
-//     Light light1(glm::vec3(0.f,0.f,-10.f), glm::vec3(1.0f,0.0f,0.0f), 0.2f);
-
-//     float length = 20.0f, breadth = 20.0f, h = 20.0f;
-//     float densityOffset = 0.1f, densityMultiplier = 0.8f, lightAbsorption  = 0.1f;
-
-                            
-//     glm::vec3 backgroundColor(0.0f, 0.00f, 0.0f); 
-
-//     Cloud cloud(cloudCenter, length, breadth, h, densityOffset, densityMultiplier, lightAbsorption); 
-
-//     // OpenMP parallel loop
-//     #pragma omp parallel for collapse(2) schedule(dynamic)
-    
-//     for (int j = 0; j < height; j++)
-//     {
-//         for (int i = 0; i < width; i++)
-//         {
-//             float x = ((i + 0.5) / width) - 0.5;
-//             float y = ((height - 1 - j + 0.5) / height) - 0.5;
-
-//             glm::vec4 uvk(U * x, V * y, -k, 1.f);
-
-//             glm::vec4 raydir = glm::normalize((uvk - camera.pos));
-//             glm::vec4 worldRayDir = glm::normalize(camera.getViewMatrixInverse() * raydir); // to world space
-
-//             Image[j * width + i] =  convertVec3RGBA( cloud.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), light1.pos, light1.emissionColor, backgroundColor,light1.radius) + light1.lightSphereWithGlow(worldRayDir,worldEye));
-//         }
-//     }
-
-//     // Save the image after processing
-//     saveImage(Image,"output.png");
-
-//     return 0;
-// }
-
-
 #include <omp.h>
 #include <cstdio>
 #include <vector>
@@ -79,11 +11,29 @@
 #include "src/rgba.h"
 #include "src/backend.h"
 #include "Cloud.h"
-#include "lights.h"
+
+RGBA raymarchCloud(const glm::vec3& rayOrigin, const glm::vec3& rayDir, const Cloud& cloud, const glm::vec3& lightDir, const glm::vec3& lightColor, const glm::vec3& backgroundColor) {
+    glm::vec3 color = cloud.renderClouds(rayOrigin, rayDir, lightDir, lightColor, backgroundColor);
+
+    
+    int r = std::min(255, static_cast<int>(color.r * 255));
+    int g = std::min(255, static_cast<int>(color.g * 255));
+    int b = std::min(255, static_cast<int>(color.b * 255));
+    return RGBA(r, g, b, 255);
+}
+
 
 int main()
 {
-    int height = 720, width = 1280;
+    Camera camera;
+
+    // Camera setup: Play with the camera to see 
+    camera.pos = glm::vec4(30.0f, 20.0f, 30.0f, 1.0f); // Position the camera
+    glm::vec3 cloudCenter(0.0f, -10.0f, 0.0f); 
+    camera.look = glm::normalize(glm::vec4(cloudCenter, 1.0f) - camera.pos); // Look at the cloud box
+    camera.up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f); // Keep the camera upright
+
+    int height = 1000, width = 1000;
     std::vector<RGBA> Image(width * height, RGBA(0, 0, 0, 255));
 
     glm::vec3 cloudCenter(0.0f, 0.1f, 0.f); 
@@ -148,15 +98,15 @@ int main()
                 float x = ((i + 0.5f) / width) - 0.5f;
                 float y = ((height - 1 - j + 0.5f) / height) - 0.5f;
 
+
                 glm::vec4 uvk(U * x, V * y, -k, 1.f);
-                glm::vec4 raydir = glm::normalize((uvk - camera.pos));
-                glm::vec4 worldRayDir = glm::normalize(camera.getViewMatrixInverse() * raydir);
 
-                glm::vec3 color = cloud.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), 
-                                                     light1.pos, light1.emissionColor, backgroundColor, light1.radius)
-                                   + light1.lightSphereWithGlow(worldRayDir, worldEye);
+                glm::vec4 raydir = glm::normalize((uvk - eye));
+                glm::vec4 worldRayDir = glm::normalize(camera.getViewMatrixInverse() * raydir); // To world space
 
-                Image[j * width + i] = convertVec3RGBA(color);
+                // Render pixel using the updated cloud position
+                Image[j * width + i] = raymarchCloud(
+                    glm::vec3(worldEye), glm::vec3(worldRayDir), cloud, lightDir, lightColor, backgroundColor);
             }
         }
 
