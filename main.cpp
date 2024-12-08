@@ -39,36 +39,46 @@ int main()
     glm::vec4 eye = camera.pos; // Use camera's position as the eye
     glm::vec4 worldEye = camera.getViewMatrixInverse() * eye;
 
-    float length = 10.0f, breadth = 10.0f, h = 10.0f;
-    float densityOffset = 0.1f, densityMultiplier = 0.8f, lightAbsorption = 0.1f;
-    Cloud cloud(cloudCenter, length, breadth, h, densityOffset, densityMultiplier, lightAbsorption);
+    float length = 30.0f, breadth = 30.0f, h = 30.0f;
+    float densityOffset = 0.5f, densityMultiplier = 1.2f, lightAbsorption = 0.5f;
+    glm::vec3 shapeOffset = glm::vec3(0.f, 0.f, 0.f);
+    Cloud cloud(cloudCenter, length, breadth, h, densityOffset, shapeOffset , densityMultiplier, lightAbsorption);
 
     glm::vec3 lightDir = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f)); // Light direction
     glm::vec3 lightColor(1.0f, 1.0f, 1.0f);                              // White light
     glm::vec3 backgroundColor(0.5f, 0.7f, 1.0f);                        // Sky blue background
 
-    // OpenMP parallel loop
-    #pragma omp parallel for collapse(2) schedule(dynamic)
-    for (int j = 0; j < height; j++) {
-        for (int i = 0; i < width; i++) {
-            float x = ((i + 0.5f) / width) - 0.5f;
-            float y = ((height - 1 - j + 0.5f) / height) - 0.5f;
+    float time = 0.0f; // Initialize time
 
-            // Adjust uvk for the camera's distance
-            glm::vec4 uvk(U * x, V * y, -k, 1.f);
+    for (int frame = 0; frame < 100; ++frame) { // Render 100 frames
+        // Update cloud position
+        cloud.shapeOffset.x+=0.1f; // Increment time
 
-            glm::vec4 raydir = glm::normalize((uvk - eye));
-            glm::vec4 worldRayDir = glm::normalize(camera.getViewMatrixInverse() * raydir); // Convert to world space
+        // OpenMP parallel loop for rendering
+        #pragma omp parallel for collapse(2) schedule(dynamic)
+        for (int j = 0; j < height; j++) {
+            for (int i = 0; i < width; i++) {
+                float x = ((i + 0.5f) / width) - 0.5f;
+                float y = ((height - 1 - j + 0.5f) / height) - 0.5f;
 
-            // Assign the computed color to the pixel
-            Image[j * width + i] = raymarchCloud(glm::vec3(worldEye), glm::vec3(worldRayDir), cloud, lightDir, lightColor, backgroundColor);
+                glm::vec4 uvk(U * x, V * y, -k, 1.f);
+
+                glm::vec4 raydir = glm::normalize((uvk - eye));
+                glm::vec4 worldRayDir = glm::normalize(camera.getViewMatrixInverse() * raydir); // To world space
+
+                // Render pixel using the updated cloud position
+                Image[j * width + i] = raymarchCloud(
+                    glm::vec3(worldEye), glm::vec3(worldRayDir), cloud, lightDir, lightColor, backgroundColor);
+            }
         }
+
+        // Save the frame
+        std::string filename = "cloud_frame_" + std::to_string(frame) + ".png";
+        saveImage(Image, filename.c_str());
+        std::cout << "Saved frame: " << filename << std::endl;
     }
 
-    // Save the image after processing
-    if (saveImage(Image)) {
-        std::cout << "Rendering completed." << std::endl;
-    }
+
 
     return 0;
 }
