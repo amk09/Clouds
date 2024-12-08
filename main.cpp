@@ -86,25 +86,25 @@ int main()
     int height = 720, width = 1280;
     std::vector<RGBA> Image(width * height, RGBA(0, 0, 0, 255));
 
-    glm::vec3 cloudCenter(0.0f, 0.0f, 0.f); 
-    float length = .5f, breadth = .5f, h = .5f;
+    glm::vec3 cloudCenter(0.0f, 0.1f, 0.f); 
+    float length = .1f, breadth = .1f, h = 10.f; // h is along z axis, b is along y axis, l is along x
+
 
     Camera camera;
-    camera.pos = glm::vec4(0.0f, 0.0f, 3.5f, 1.0f);
-    camera.look = glm::normalize(glm::vec4(cloudCenter,1.f)-camera.pos);
+    camera.pos = glm::vec4(0.0f, 0.0f, 10.f, 1.0f);
+    // camera.look = glm::normalize(glm::vec4(cloudCenter,1.f)-camera.pos);
+    camera.look = glm::normalize(glm::vec4(0.f,0.f,-1.f,0.0f));
 
     glm::vec3 worldUp(0.0f, 1.0f, 0.0f); 
     glm::vec3 right_vector = glm::normalize(glm::cross(glm::vec3(camera.look), worldUp));
     camera.up = glm::vec4(glm::normalize(glm::cross(right_vector, glm::vec3(camera.look))),0.f);
 
     float k = 0.1f;
-    float horizontal_angle = 45.0;
+    float horizontal_angle = 60.0;
     float V = 2 * k * glm::tan(glm::radians(horizontal_angle / 2));
     float U = (width * V) / height;
 
     glm::vec4 worldEye = camera.getViewMatrixInverse() * camera.pos;
-
-    
 
 
     float densityOffset = 0.1f, densityMultiplier = 0.8f, lightAbsorption  = 0.2f;
@@ -113,10 +113,10 @@ int main()
     Cloud cloud(cloudCenter, length, breadth, h, densityOffset, densityMultiplier, lightAbsorption);
 
     // Define start and end positions for the light
-    glm::vec3 startPos = glm::vec3(0.f,0.f,-5.f);   // at camera
-    glm::vec3 endPos   = glm::vec3(0.f,0.f,-10.f); // well beyond the cloud center
+    glm::vec3 startPos = glm::vec3(0.f,0.-0.7f,0.f);   // at camera
+    glm::vec3 endPos   = glm::vec3(0.f,.3f,0.f); // well beyond the cloud center
     glm::vec3 dir = glm::normalize(endPos - startPos);
-    int totalFrames = 2;
+    int totalFrames = 24;
     glm::vec3 red(1.0f, 1.0f, 1.0f);
     glm::vec3 orange(1.0f, 1.f, 1.0f);
     glm::vec3 white(1.0f, 1.0f, 1.0f);
@@ -136,9 +136,9 @@ int main()
             emissionColor = glm::mix(red, orange, localT);
         }
 
-        float lightRadius = .5f;
-        // Light light1(currentLightPos, emissionColor, lightRadius);
-        Light light1(glm::vec4(0.f,0.f,0.f,1.f), emissionColor, 0.01f);
+        float lightRadius = 0.01f;
+        Light light1(currentLightPos, emissionColor, lightRadius);
+        //Light light1(glm::vec4(0.f,0.f,0.f,1.f), emissionColor, 0.01f);
         // Render the frame
         #pragma omp parallel for collapse(2) schedule(dynamic)
         for (int j = 0; j < height; j++)

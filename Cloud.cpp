@@ -56,7 +56,7 @@ float Cloud::lightMarch(glm::vec3 position, glm::vec3 LightPos, float radius) co
     // Compute attenuation using an inverse-square law
     // For a point light, intensity typically falls off as 1 / (distance^2).
     // Adding 1.0 to avoid division by zero at very small distances and to set a baseline intensity.
-    float a = 10.f;
+    float a = 5.f;
     float b = 1.f;
     float c = 1.f;
     float d = 1.f;
