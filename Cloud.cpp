@@ -3,6 +3,44 @@
 #include <algorithm>
 #include <iostream>
 
+//New edit: added shapeOffset attribute. 
+// To use it, in the main function, after the line float densityOffset = 0.5f, densityMultiplier = 1.2f, lightAbsorption = 0.5f;
+//add the following: 
+// glm::vec3 shapeOffset = glm::vec3(0.f, 0.f, 0.f);
+// To see the change, make a look to make frames:
+// for (int frame = 0; frame < 100; ++frame) { // Render 100 frames
+//         // Update cloud position
+//         cloud.shapeOffset.x+=0.1f; // Increment time
+
+//         // OpenMP parallel loop for rendering
+//         #pragma omp parallel for collapse(2) schedule(dynamic)
+//         for (int j = 0; j < height; j++) {
+//             for (int i = 0; i < width; i++) {
+//                 float x = ((i + 0.5f) / width) - 0.5f;
+//                 float y = ((height - 1 - j + 0.5f) / height) - 0.5f;
+
+//                 glm::vec4 uvk(U * x, V * y, -k, 1.f);
+
+//                 glm::vec4 raydir = glm::normalize((uvk - eye));
+//                 glm::vec4 worldRayDir = glm::normalize(camera.getViewMatrixInverse() * raydir); // To world space
+
+//                 // Render pixel using the updated cloud position
+//                 Image[j * width + i] = raymarchCloud(
+//                     glm::vec3(worldEye), glm::vec3(worldRayDir), cloud, lightDir, lightColor, backgroundColor);
+//             }
+//         }
+
+//         // Save the frame
+//         std::string filename = "cloud_frame_" + std::to_string(frame) + ".png";
+//         saveImage(Image, filename.c_str());
+//         std::cout << "Saved frame: " << filename << std::endl;
+//     }
+
+//In the above setting, cloud will move in x direction. 
+
+
+
+
 Cloud::Cloud(glm::vec3 center, float length, float breadth, float height, float densityOffset, glm::vec3 shapeOffset, float densityMultiplier, float lightAbsorption)
     : center(center),
       length(length),
@@ -20,43 +58,6 @@ float remap(float value, float inMin, float inMax, float outMin, float outMax) {
     float t = (value - inMin) / (inMax - inMin);
     return outMin + t * (outMax - outMin);
 }
-// float Cloud::sampleDensity(glm::vec3 position) const {
-//     glm::vec3 size = glm::vec3(length, breadth, height);
-//     glm::vec3 uvw = (size * .5f + position); // Normalize to the cloud volume
-//     glm::vec3 shapePos = uvw + shapeOffset;
-
-//     float heightP = (position.y - (center.y - breadth / 2.0f)) / height;
-
-//     float heightG = glm::clamp(remap(heightP, 0.0f, 0.2f, 0.0f, 1.0f), 0.0f, 1.0f) *
-//                 glm::clamp(remap(heightP, 1.0f, 0.7f, 0.0f, 1.0f), 0.0f, 1.0f);
-
-    
-//     glm::vec4 shapeNoise = glm::vec4(glm::perlin(shapePos));
-//     glm::vec3 normalizedShapeWeights = glm::normalize(glm::vec3(1.0f, 1.0f, 1.0f)); // Placeholder weights
-//     float shapeFBM = glm::dot(glm::vec3(shapeNoise), normalizedShapeWeights) * heightG;
-// float normalizedFBM = (shapeFBM + 1.0f) * 0.5f; // Remap to [0, 1]
-// float baseShapeDensity = normalizedFBM + densityOffset * -1.0f;
-
-
-//      std::cout << "Base Shape Density: " << baseShapeDensity << std::endl;
-
-
-//     // Add fractal noise for natural variation
-//     if (baseShapeDensity > 0.0f) {
-//         glm::vec3 detailSamplePos = uvw * glm::vec3(1.0f); // Add appropriate scaling here
-//         glm::vec4 detailNoise = glm::vec4(glm::perlin(detailSamplePos)); // Assuming a 4D noise implementation
-//         glm::vec3 detailWeights = glm::vec3(1.0f); // Placeholder weights
-//         glm::vec3 normalizedDetailWeights = glm::normalize(detailWeights);
-//         float detailFBM = glm::dot(glm::vec3(detailNoise), normalizedDetailWeights);
-//         // Subtract detail noise from base shape
-//         float detailErodeWeight = (1.0f - shapeFBM) * (1.0f - shapeFBM);
-//         float cloudDensity = baseShapeDensity * (1.0f - detailFBM) * detailErodeWeight;
-
-//         return cloudDensity * densityMultiplier * 0.1f;
-//     }
-
-//     return 0.f;
-// }
 
 
 float Cloud::sampleDensity(glm::vec3 position) const 
@@ -82,22 +83,40 @@ float Cloud::sampleDensity(glm::vec3 position) const
 
 
 
-float Cloud::lightMarch(glm::vec3 position, glm::vec3 dirToLight) const {
-    glm::vec3 currentPos = position;
+float Cloud::lightMarch(glm::vec3 position, glm::vec3 LightPos, float radius) const {
+    glm::vec3 dirToLight = glm::normalize(LightPos - position);
     float stepSize = glm::length(glm::vec3(length, breadth, height)) / float(numStepsLight);
+
     float totalDensity = 0.0f;
 
+    #pragma omp parallel for reduction(+:totalDensity)
     for (int i = 0; i < numStepsLight; ++i) {
-        totalDensity += sampleDensity(currentPos) * stepSize;
-        currentPos += dirToLight * stepSize;
-
-        if (exp(-totalDensity * lightAbsorption) < 0.01f)
-            break;
+        glm::vec3 samplePos = position + float(i) * stepSize * dirToLight;
+        float density = sampleDensity(samplePos) * stepSize;
+        totalDensity += density;
     }
 
-    float transmittance = exp(-totalDensity * lightAbsorption * 1.2f);
+    // Compute distance to the last sampling point (approximately representing the distance along the light ray)
+    float dist = glm::distance(LightPos, position + (float)(numStepsLight - 1) * stepSize * dirToLight) - radius;
+
+    // Compute attenuation using an inverse-square law
+    // For a point light, intensity typically falls off as 1 / (distance^2).
+    // Adding 1.0 to avoid division by zero at very small distances and to set a baseline intensity.
+    float a = 5.f;
+    float b = 1.f;
+    float c = 1.f;
+    float d = 1.f;
+    float distanceAttenuation = a / (b + (c * dist) + d * dist*dist);
+
+    float transmittance = exp(-totalDensity * lightAbsorption * 1.2f) * distanceAttenuation;
+
     return transmittance;
 }
+
+
+
+
+
 const glm::mat2 m2 = glm::mat2(  0.80,  0.60,
                       -0.60,  0.80 );
 
@@ -191,37 +210,30 @@ glm::vec3 smoothstep(float edge0, float edge1, glm::vec3 x) {
     );
 }
 
-glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDir, const glm::vec3& lightDir, const glm::vec3& lightColor, const glm::vec3& backgroundColor) const {
+glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDir, const glm::vec3& lightPos, const glm::vec3& lightColor, const glm::vec3& backgroundColor, float radius) const 
+{    
+    //backgroundColor adjust for a better sky rendering: to use it, you can make 
+    //the following col in the main function.
+
+    
     glm::vec3 col = glm::vec3(0.42,0.62,1.1) - glm::vec3(0.4f * rayDir.y);
 
-        // clouds
-        float t = (2500.0-rayOrigin.y)/rayDir.y;
-        if( t>0.0 )
-        {
-            glm::vec3 pos = rayOrigin + t * rayDir;
-            glm::vec2 uv = glm::vec2(pos.x, pos.z);
-            float cl = fbm_9( uv * 0.00104f );
-            float dl = smoothstep(-0.2,0.6,cl);
-            col = mix( col, glm::vec3(1.0), 0.12*dl );
-        }
-        
-        // sun glare    
-        float sun = glm::clamp( glm::dot(kSunDir,rayDir), 0.0f, 1.0f );
-        col +=  0.2f * glm::vec3(1.0f, 0.6f, 0.3f) * glm::pow(sun, 32.0f);
-
-        // float sun = glm::clamp( glm::dot(kSunDir,rayDir), 0.0f, 1.0f );
-
-        // glm::vec3 col = glm::vec3(0.76f,0.75f,0.95f)*-0.001f;
-
-        // col -= 0.8f*glm::vec3(0.90f*rayDir.y,0.75f*rayDir.y,0.95f*rayDir.y);
-
-        // col +=  0.2f * glm::vec3(1.0f, 0.6f, 0.1f) * glm::pow(sun, 8.0f);
-
-
-        // col += 0.2f*glm::vec3(1.0f,0.4f,0.2f) * glm::pow(sun,3.0f);
-        // col = smoothstep(0.15f, 1.1f, col);
+    // clouds
+    float t = (2500.0-rayOrigin.y)/rayDir.y;
+    if( t>0.0 )
+    {
+        glm::vec3 pos = rayOrigin + t * rayDir;
+        glm::vec2 uv = glm::vec2(pos.x, pos.z);
+        float cl = fbm_9( uv * 0.00104f );
+        float dl = smoothstep(-0.2,0.6,cl);
+        col = mix( col, glm::vec3(1.0), 0.12*dl );
+    }
     
-    
+    // sun glare    
+    float sun = glm::clamp( glm::dot(kSunDir,rayDir), 0.0f, 1.0f );
+    col +=  0.2f * glm::vec3(1.0f, 0.6f, 0.3f) * glm::pow(sun, 32.0f);
+
+
     //check if the ray hits the box
     bool hit = true;
     // Define the bounding box limits
@@ -288,12 +300,13 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
     glm::vec3 lightEnergy(0.0f);
     float dstTravelled = 0.0f;
 
+    //while (dstTravelled < glm::length(glm::vec3(length, breadth, height))){
     while (dstTravelled < glm::length(entryPoint - exitPoint)) {
         glm::vec3 rayPos = entryPoint + rayDir * dstTravelled;
         float density = sampleDensity(rayPos);
 
         if (density > 0.0f) {
-            float lightTransmittance = lightMarch(rayPos, glm::normalize(lightDir));
+            float lightTransmittance = lightMarch(rayPos, lightPos, radius);
 
             // Accumulate light energy
             lightEnergy += density * stepSize * transmittance * lightTransmittance * lightColor;
@@ -309,8 +322,9 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
         dstTravelled += stepSize;
     }
 
+
     glm::vec3 cloudColor = lightEnergy;
-          
+          //agian, can repace col w. background color as before
     glm::vec3 finalColor = col * transmittance + cloudColor;
 
     return finalColor;
