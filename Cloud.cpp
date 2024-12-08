@@ -84,9 +84,6 @@ float Cloud::sampleDensity(glm::vec3 position) const
 }
 
 
-
-
-
 float Cloud::lightMarch(glm::vec3 position, glm::vec3 LightPos, float radius) const {
     glm::vec3 dirToLight = glm::normalize(LightPos - position);
     float stepSize = glm::length(glm::vec3(length, breadth, height)) / float(numStepsLight);
@@ -290,13 +287,11 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
 
     //start ray marching.
     // Ray intersects the box; start ray tracing within the box
-    glm::vec3 entryPoint = rayOrigin + tMin * rayDir;
-    glm::vec3 exitPoint = rayOrigin + tMax * rayDir;
+    // glm::vec3 entryPoint = rayOrigin + tMin * rayDir;
+    // glm::vec3 exitPoint = rayOrigin + tMax * rayDir;
 
-
-
-    //  glm::vec3 entryPoint = center - glm::vec3(length, breadth, height) * 0.5f;
-    // glm::vec3 exitPoint = center + glm::vec3(length, breadth, height) * 0.5f;
+    glm::vec3 entryPoint = center - glm::vec3(length, breadth, height) * 0.5f;
+    glm::vec3 exitPoint = center + glm::vec3(length, breadth, height) * 0.5f;
 
 
 
@@ -304,7 +299,6 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
     float transmittance = 1.0f;
     glm::vec3 lightEnergy(0.0f);
     float dstTravelled = 0.0f;
-
 
     //while (dstTravelled < glm::length(glm::vec3(length, breadth, height))){
     while (dstTravelled < glm::length(entryPoint - exitPoint)) {
