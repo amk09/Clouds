@@ -2,44 +2,22 @@
 #include <cmath>
 #include <algorithm>
 #include <iostream>
+<<<<<<< HEAD
 #include "glm/gtx/string_cast.hpp"
+=======
+#include "glm/gtc/noise.hpp"
 
-//New edit: added shapeOffset attribute. 
+>>>>>>> newdev
+
+// New edit: added shapeOffset attribute. 
+
 // To use it, in the main function, after the line float densityOffset = 0.5f, densityMultiplier = 1.2f, lightAbsorption = 0.5f;
-//add the following: 
+// add the following: 
 // glm::vec3 shapeOffset = glm::vec3(0.f, 0.f, 0.f);
-// To see the change, make a look to make frames:
-// for (int frame = 0; frame < 100; ++frame) { // Render 100 frames
-//         // Update cloud position
-//         cloud.shapeOffset.x+=0.1f; // Increment time
-
-//         // OpenMP parallel loop for rendering
-//         #pragma omp parallel for collapse(2) schedule(dynamic)
-//         for (int j = 0; j < height; j++) {
-//             for (int i = 0; i < width; i++) {
-//                 float x = ((i + 0.5f) / width) - 0.5f;
-//                 float y = ((height - 1 - j + 0.5f) / height) - 0.5f;
-
-//                 glm::vec4 uvk(U * x, V * y, -k, 1.f);
-
-//                 glm::vec4 raydir = glm::normalize((uvk - eye));
-//                 glm::vec4 worldRayDir = glm::normalize(camera.getViewMatrixInverse() * raydir); // To world space
-
-//                 // Render pixel using the updated cloud position
-//                 Image[j * width + i] = raymarchCloud(
-//                     glm::vec3(worldEye), glm::vec3(worldRayDir), cloud, lightDir, lightColor, backgroundColor);
-//             }
-//         }
-
-//         // Save the frame
-//         std::string filename = "cloud_frame_" + std::to_string(frame) + ".png";
-//         saveImage(Image, filename.c_str());
-//         std::cout << "Saved frame: " << filename << std::endl;
-//     }
-
-//In the above setting, cloud will move in x direction. 
 
 
+// Inside the frame loop:
+// cloud.shapeOffset.x+=0.1f; // Increment time
 
 
 Cloud::Cloud(glm::vec3 center, float length, float breadth, float height, float densityOffset, glm::vec3 shapeOffset, float densityMultiplier, float lightAbsorption)
@@ -56,11 +34,6 @@ Cloud::Cloud(glm::vec3 center, float length, float breadth, float height, float 
       numStepsLight(16) {}
 
 
-float remap(float value, float inMin, float inMax, float outMin, float outMax) {
-    // Map the value from [inMin, inMax] to [outMin, outMax]
-    float t = (value - inMin) / (inMax - inMin);
-    return outMin + t * (outMax - outMin);
-}
 
 
 float Cloud::sampleDensity(glm::vec3 position) const 
@@ -134,10 +107,12 @@ float Cloud::lightMarch(glm::vec3 position, glm::vec3 LightPos, float radius) co
     float distanceAttenuation = a / (b + (c * dist) + d * dist*dist);
 
     float transmittance = exp(-totalDensity * lightAbsorption * 1.2f) * distanceAttenuation;
+
     return transmittance;
 }
 
 
+<<<<<<< HEAD
 const glm::mat2 m2 = glm::mat2(  0.80,  0.60,
                       -0.60,  0.80 );
 
@@ -235,29 +210,18 @@ glm::vec3 Cloud::renderCloudsPointlight(const glm::vec3& rayOrigin, const glm::v
 {    
     //backgroundColor adjust for a better sky rendering: to use it, you can make 
     //the following col in the main function.
+=======
 
-    
-    glm::vec3 col = glm::vec3(0.42,0.62,1.1) - glm::vec3(0.4f * rayDir.y);
+glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDir, const glm::vec3& lightPos, const glm::vec3& lightColor, const glm::vec3& backgroundColor, float radius) const 
+{   
+>>>>>>> newdev
 
-    // clouds
-    float t = (2500.0-rayOrigin.y)/rayDir.y;
-    if( t>0.0 )
-    {
-        glm::vec3 pos = rayOrigin + t * rayDir;
-        glm::vec2 uv = glm::vec2(pos.x, pos.z);
-        float cl = fbm_9( uv * 0.00104f );
-        float dl = smoothstep(-0.2,0.6,cl);
-        col = mix( col, glm::vec3(1.0), 0.12*dl );
-    }
-    
-    // sun glare    
-    float sun = glm::clamp( glm::dot(kSunDir,rayDir), 0.0f, 1.0f );
-    col +=  0.2f * glm::vec3(1.0f, 0.6f, 0.3f) * glm::pow(sun, 32.0f);
-
-
-    //check if the ray hits the box
     bool hit = true;
 
+    glm::vec3 col = backgroundColor;
+
+    //check if the ray hits the box
+    
     // Define the bounding box limits
     glm::vec3 minBounds = center - glm::vec3(length, breadth, height) * 0.5f;
     glm::vec3 maxBounds = center + glm::vec3(length, breadth, height) * 0.5f;
@@ -274,8 +238,7 @@ glm::vec3 Cloud::renderCloudsPointlight(const glm::vec3& rayOrigin, const glm::v
     if (tyMin > tyMax) std::swap(tyMin, tyMax);
 
     if ((tMin > tyMax) || (tyMin > tMax)) {
-       hit= false; // No intersection, return background color
-
+        return col; // No intersection, return background color
     }
 
     tMin = glm::max(tMin, tyMin);
@@ -287,15 +250,14 @@ glm::vec3 Cloud::renderCloudsPointlight(const glm::vec3& rayOrigin, const glm::v
     if (tzMin > tzMax) std::swap(tzMin, tzMax);
 
     if ((tMin > tzMax) || (tzMin > tMax)) {
-
-        hit = false; // No intersection, return background color
+        return col; // No intersection, return background color
     }
 
     tMin = glm::max(tMin, tzMin);
     tMax = glm::min(tMax, tzMax);
 
     if (tMin < 0 && tMax < 0) {
-       hit= false; // Intersection happens behind the ray origin
+        return col; // Intersection happens behind the ray origin
     }
 
     if(hit == false){
@@ -305,9 +267,18 @@ glm::vec3 Cloud::renderCloudsPointlight(const glm::vec3& rayOrigin, const glm::v
 
     //start ray marching.
     // Ray intersects the box; start ray tracing within the box
+<<<<<<< HEAD
     glm::vec3 entryPoint = rayOrigin + tMin * rayDir;
     glm::vec3 exitPoint = rayOrigin + tMax * rayDir;
 
+=======
+    tMin = std::max(0.f, tMin);
+    glm::vec3 entryPoint = rayOrigin + tMin * rayDir;
+    glm::vec3 exitPoint = rayOrigin + tMax * rayDir;
+    
+
+
+>>>>>>> newdev
     // glm::vec3 entryPoint = center - glm::vec3(length, breadth, height) * 0.5f;
     // glm::vec3 exitPoint = center + glm::vec3(length, breadth, height) * 0.5f;
 
@@ -344,9 +315,7 @@ glm::vec3 Cloud::renderCloudsPointlight(const glm::vec3& rayOrigin, const glm::v
 
 
     glm::vec3 cloudColor = lightEnergy;
-          //agian, can repace col w. background color as before
     glm::vec3 finalColor = col * transmittance + cloudColor;
-
 
     return finalColor;
 }
