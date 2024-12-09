@@ -2,7 +2,7 @@
 #include <cmath>
 #include <algorithm>
 #include <iostream>
-
+#include "glm/gtx/string_cast.hpp"
 
 //New edit: added shapeOffset attribute. 
 // To use it, in the main function, after the line float densityOffset = 0.5f, densityMultiplier = 1.2f, lightAbsorption = 0.5f;
@@ -65,8 +65,10 @@ float remap(float value, float inMin, float inMax, float outMin, float outMax) {
 
 float Cloud::sampleDensity(glm::vec3 position) const 
 {
-    glm::vec3 uvw = (position - center+shapeOffset) / glm::vec3(length, breadth, height); // Normalize to the cloud volume
-    float baseShape = 0.0f;
+    glm::vec3 uvw = (position - center + shapeOffset) / glm::vec3(length, breadth, height); // Normalize to the cloud volume
+    float baseShape = glm::length(uvw) - 0.5f; // Sphere centered at UVW origin
+    baseShape = glm::max(baseShape, -0.5f);    // Adjust shape threshold for denser interior
+
     baseShape = glm::min(baseShape, glm::length(uvw - glm::vec3(-0.3f, 0.2f, 0.0f)) - 0.4f); 
     baseShape = glm::min(baseShape, glm::length(uvw - glm::vec3(0.3f, -0.2f, 0.1f)) - 0.5f); // Sphere 2
     baseShape = glm::min(baseShape, glm::length(uvw - glm::vec3(0.0f, 0.1f, 0.3f)) - 0.6f); // Sphere 3
@@ -79,11 +81,33 @@ float Cloud::sampleDensity(glm::vec3 position) const
 
     // Combine base shape and noise to get the density
     float density = glm::max(0.0f, (baseShape + fractalNoise - densityOffset) * densityMultiplier);
+    // std::cout << "Position: " << glm::to_string(position)
+    //           << ", UVW: " << glm::to_string(uvw)
+    //           << ", Base Shape: " << baseShape
+    //           << ", Noise: " << fractalNoise
+    //           << ", Density: " << density << std::endl;
 
-    return density;
+    return density; 
+}
+//direction light version
+float Cloud::lightMarch(glm::vec3 position, glm::vec3 dirToLight) const {
+    glm::vec3 currentPos = position;
+    float stepSize = glm::length(glm::vec3(length, breadth, height)) / float(numStepsLight);
+    float totalDensity = 0.0f;
+
+    for (int i = 0; i < numStepsLight; ++i) {
+        totalDensity += sampleDensity(currentPos) * stepSize;
+        currentPos += dirToLight * stepSize;
+
+        if (exp(-totalDensity * lightAbsorption) < 0.01f)
+            break;
+    }
+
+    float transmittance = exp(-totalDensity * lightAbsorption * 1.2f);
+    return transmittance;
 }
 
-
+//point light version
 float Cloud::lightMarch(glm::vec3 position, glm::vec3 LightPos, float radius) const {
     glm::vec3 dirToLight = glm::normalize(LightPos - position);
     float stepSize = glm::length(glm::vec3(length, breadth, height)) / float(numStepsLight);
@@ -206,8 +230,8 @@ glm::vec3 smoothstep(float edge0, float edge1, glm::vec3 x) {
         smoothstep(edge0, edge1, x.z)
     );
 }
-
-glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDir, const glm::vec3& lightPos, const glm::vec3& lightColor, const glm::vec3& backgroundColor, float radius) const 
+//Point light version
+glm::vec3 Cloud::renderCloudsPointlight(const glm::vec3& rayOrigin, const glm::vec3& rayDir, const glm::vec3& lightPos, const glm::vec3& lightColor, const glm::vec3& backgroundColor, float radius) const 
 {    
     //backgroundColor adjust for a better sky rendering: to use it, you can make 
     //the following col in the main function.
@@ -281,11 +305,11 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
 
     //start ray marching.
     // Ray intersects the box; start ray tracing within the box
-    // glm::vec3 entryPoint = rayOrigin + tMin * rayDir;
-    // glm::vec3 exitPoint = rayOrigin + tMax * rayDir;
+    glm::vec3 entryPoint = rayOrigin + tMin * rayDir;
+    glm::vec3 exitPoint = rayOrigin + tMax * rayDir;
 
-    glm::vec3 entryPoint = center - glm::vec3(length, breadth, height) * 0.5f;
-    glm::vec3 exitPoint = center + glm::vec3(length, breadth, height) * 0.5f;
+    // glm::vec3 entryPoint = center - glm::vec3(length, breadth, height) * 0.5f;
+    // glm::vec3 exitPoint = center + glm::vec3(length, breadth, height) * 0.5f;
 
 
 
@@ -323,6 +347,148 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
           //agian, can repace col w. background color as before
     glm::vec3 finalColor = col * transmittance + cloudColor;
 
+
+    return finalColor;
+}
+
+
+//Directional light version
+glm::vec3 Cloud::renderCloudsDirlight(const glm::vec3& rayOrigin, const glm::vec3& rayDir, const glm::vec3& lightDir, const glm::vec3& lightColor, const glm::vec3& backgroundColor) const {
+    
+    glm::vec3 col = glm::vec3(0.42,0.62,1.1) - glm::vec3(0.4f * rayDir.y);
+
+        // clouds
+        float t = (2500.0-rayOrigin.y)/rayDir.y;
+        if( t>0.0 )
+        {
+            glm::vec3 pos = rayOrigin + t * rayDir;
+            glm::vec2 uv = glm::vec2(pos.x, pos.z);
+            float cl = fbm_9( uv * 0.00104f );
+            float dl = smoothstep(-0.2,0.6,cl);
+            col = mix( col, glm::vec3(1.0), 0.12*dl );
+        }
+        
+        // sun glare    
+        float sun = glm::clamp( glm::dot(kSunDir,rayDir), 0.0f, 1.0f );
+        col +=  0.2f * glm::vec3(1.0f, 0.6f, 0.3f) * glm::pow(sun, 32.0f);
+
+        // float sun = glm::clamp( glm::dot(kSunDir,rayDir), 0.0f, 1.0f );
+
+        // glm::vec3 col = glm::vec3(0.76f,0.75f,0.95f)*-0.001f;
+
+        // col -= 0.8f*glm::vec3(0.90f*rayDir.y,0.75f*rayDir.y,0.95f*rayDir.y);
+
+        // col +=  0.2f * glm::vec3(1.0f, 0.6f, 0.1f) * glm::pow(sun, 8.0f);
+
+
+        // col += 0.2f*glm::vec3(1.0f,0.4f,0.2f) * glm::pow(sun,3.0f);
+        // col = smoothstep(0.15f, 1.1f, col);
+    
+    
+    //check if the ray hits the box
+    bool hit = true;
+     const float epsilon = 1e-6;
+    // Define the bounding box limits
+    glm::vec3 minBounds = center - glm::vec3(length, breadth, height) * 0.5f;
+    glm::vec3 maxBounds = center + glm::vec3(length, breadth, height) * 0.5f;
+
+    // Perform ray-box intersection test
+    float tMin = (minBounds.x - rayOrigin.x) / rayDir.x;
+    float tMax = (maxBounds.x - rayOrigin.x) / rayDir.x;
+
+    if (tMin > tMax) std::swap(tMin, tMax);
+
+    float tyMin = (minBounds.y - rayOrigin.y) / rayDir.y;
+    float tyMax = (maxBounds.y - rayOrigin.y) / rayDir.y;
+
+    if (tyMin > tyMax) std::swap(tyMin, tyMax);
+
+    if ((tMin > tyMax+epsilon) || (tyMin > tMax+epsilon)) {
+       hit= false; // No intersection, return background color
+    }
+
+    tMin = glm::max(tMin, tyMin);
+    tMax = glm::min(tMax, tyMax);
+
+    float tzMin = (minBounds.z - rayOrigin.z) / rayDir.z;
+    float tzMax = (maxBounds.z - rayOrigin.z) / rayDir.z;
+
+    if (tzMin > tzMax) std::swap(tzMin, tzMax);
+
+   
+    if ((tMin > tzMax + epsilon) || (tzMin > tMax + epsilon)) {
+        hit = false;
+    }
+
+    tMin = glm::max(tMin, tzMin);
+    tMax = glm::min(tMax, tzMax);
+
+    if (tMin < 0 && tMax < 0) {
+       hit= false; // Intersection happens behind the ray origin
+    }
+
+    if(hit == false){
+
+        return col;
+    }
+
+
+    
+
+
+
+
+    //start ray marching.
+    // Ray intersects the box; start ray tracing within the box
+    
+
+    glm::vec3 entryPoint = rayOrigin + tMin * rayDir;
+    if (tMin < 0.0f) {
+    tMin = 0.0f;
+    entryPoint = rayOrigin;
+}
+
+    glm::vec3 exitPoint = rayOrigin + tMax * rayDir;
+    std::cout << "Ray intersects box: EntryPoint: " << glm::to_string(entryPoint)
+              << ", ExitPoint: " << glm::to_string(exitPoint) << std::endl;
+
+
+    //  glm::vec3 entryPoint = center - glm::vec3(length, breadth, height) * 0.5f;
+    // glm::vec3 exitPoint = center + glm::vec3(length, breadth, height) * 0.5f;
+
+
+    
+    float boxDistance = glm::length(entryPoint - exitPoint);
+    float stepSize = boxDistance / numSteps;
+
+    float transmittance = 1.0f;
+    glm::vec3 lightEnergy(0.0f);
+    float dstTravelled = 0.0f;
+
+    while (dstTravelled < glm::length(entryPoint - exitPoint)) {
+        glm::vec3 rayPos = entryPoint + rayDir * dstTravelled;
+        float density = sampleDensity(rayPos);
+
+        if (density > 0.0f) {
+            float lightTransmittance = lightMarch(rayPos, glm::normalize(lightDir));
+
+            // Accumulate light energy
+            lightEnergy += density * stepSize * transmittance * lightTransmittance * lightColor;
+
+            // Update transmittance
+            transmittance *= exp(-density * stepSize * lightAbsorption);
+
+            // Early exit if transmittance is negligible
+            if (transmittance < 0.01f)
+                break;
+        }
+
+        dstTravelled += stepSize;
+    }
+
+    glm::vec3 cloudColor = lightEnergy;
+          
+    glm::vec3 finalColor = col * transmittance + cloudColor;
 
     return finalColor;
 }
