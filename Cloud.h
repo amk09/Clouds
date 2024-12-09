@@ -15,7 +15,7 @@ public:
 
     float sampleDensity(glm::vec3 position) const;
     float lightMarch(glm::vec3 position, glm::vec3 dirToLight, float radius) const;
-    glm::vec3 renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDir, const glm::vec3& lightDir, const glm::vec3& lightColor, const glm::vec3& backgroundColor) const;
+    glm::vec3 renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDir, const glm::vec3& lightDir, const glm::vec3& lightColor, const glm::vec3& backgroundColor, float radius) const;
 
     glm::vec3 center;
     float length, breadth, height;

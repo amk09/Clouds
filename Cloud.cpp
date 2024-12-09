@@ -195,7 +195,7 @@ float fbm_9( glm::vec2 x )
 //OpenGL smoothstep
 float smoothstep(float edge0, float edge1, float x) {
     // Clamp x to the range [edge0, edge1]
-    x = std::clamp((x - edge0) / (edge1 - edge0), 0.0f, 1.0f);
+    x = glm::clamp((x - edge0) / (edge1 - edge0), 0.0f, 1.0f);
     return x * x * (3.0f - 2.0f * x);
 }
 //OpenGL smoothstep
@@ -278,12 +278,6 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
 
         return col;
     }
-
-
-
-
-
-
 
     //start ray marching.
     // Ray intersects the box; start ray tracing within the box
