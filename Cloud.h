@@ -21,12 +21,11 @@ public:
     float length, breadth, height;
     float densityOffset;
     glm::vec3 shapeOffset;
-
     float densityMultiplier;
     float lightAbsorption;
     int numSteps;
     int numStepsLight;
-    const glm::vec3 kSunDir = glm::normalize(glm::vec3(-0.7071,0.0,-0.7071));
+     const glm::vec3 kSunDir = glm::normalize(glm::vec3(-0.7071,0.0,-0.7071));
 
 };
 
