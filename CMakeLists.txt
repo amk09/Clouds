@@ -15,7 +15,8 @@ add_executable(Clouds main.cpp
     src/rgba.h
     src/backend.h
     src/stb_image_write.h
-    Cloud.h)
+    Cloud.h
+    Cloud.cpp)
 
 # Include the glm headers
 # Assuming glm is a header-only library located in the glm directory

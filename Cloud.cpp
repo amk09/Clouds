@@ -17,6 +17,7 @@
 
 
 Cloud::Cloud(glm::vec3 center, float length, float breadth, float height, float densityOffset, glm::vec3 shapeOffset, float densityMultiplier, float lightAbsorption)
+
     : center(center),
       length(length),
       breadth(breadth),
@@ -128,15 +129,18 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
         return col; // Intersection happens behind the ray origin
     }
 
+    if(hit == false){
 
+        return col;
+    }
 
     //start ray marching.
     // Ray intersects the box; start ray tracing within the box
-    glm::vec3 entryPoint = rayOrigin + tMin * rayDir;
-    glm::vec3 exitPoint = rayOrigin + tMax * rayDir;
+    // glm::vec3 entryPoint = rayOrigin + tMin * rayDir;
+    // glm::vec3 exitPoint = rayOrigin + tMax * rayDir;
 
-    // glm::vec3 entryPoint = center - glm::vec3(length, breadth, height) * 0.5f;
-    // glm::vec3 exitPoint = center + glm::vec3(length, breadth, height) * 0.5f;
+    glm::vec3 entryPoint = center - glm::vec3(length, breadth, height) * 0.5f;
+    glm::vec3 exitPoint = center + glm::vec3(length, breadth, height) * 0.5f;
 
 
 
@@ -153,6 +157,7 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
         if (density > 0.0f) {
             float lightTransmittance = lightMarch(rayPos, lightPos, radius);
 
+
             // Accumulate light energy
             lightEnergy += density * stepSize * transmittance * lightTransmittance * lightColor;
 
@@ -167,11 +172,10 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
         dstTravelled += stepSize;
     }
 
+
+
     glm::vec3 cloudColor = lightEnergy;
     glm::vec3 finalColor = col * transmittance + cloudColor;
 
     return finalColor;
 }
-
-
-
