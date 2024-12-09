@@ -10,7 +10,7 @@
 
 class Cloud {
 public:
-    Cloud(glm::vec3 center, float length, float breadth, float height, float densityOffset, float densityMultiplier, float lightAbsorption);
+    Cloud(glm::vec3 center, float length, float breadth, float height, float densityOffset, glm::vec3 shapeOffset, float densityMultiplier, float lightAbsorption);
 
     float sampleDensity(glm::vec3 position) const;
     float lightMarch(glm::vec3 position, glm::vec3 lightPos, float radius) const;
@@ -19,10 +19,13 @@ public:
     glm::vec3 center;
     float length, breadth, height;
     float densityOffset;
+    glm::vec3 shapeOffset;
     float densityMultiplier;
     float lightAbsorption;
     int numSteps;
     int numStepsLight;
+
+     const glm::vec3 kSunDir = glm::normalize(glm::vec3(-0.7071,0.0,-0.7071));
 };
 
 #endif // CLOUD_H
