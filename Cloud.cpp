@@ -87,6 +87,9 @@ float Cloud::lightMarch(glm::vec3 position, glm::vec3 LightPos, float radius) co
 
 glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDir, const glm::vec3& lightPos, const glm::vec3& lightColor, const glm::vec3& backgroundColor, float radius) const 
 {   
+
+    bool hit = true;
+
     glm::vec3 col = backgroundColor;
 
     //check if the ray hits the box
@@ -136,11 +139,14 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
 
     //start ray marching.
     // Ray intersects the box; start ray tracing within the box
-    // glm::vec3 entryPoint = rayOrigin + tMin * rayDir;
-    // glm::vec3 exitPoint = rayOrigin + tMax * rayDir;
+    tMin = std::max(0.f, tMin);
+    glm::vec3 entryPoint = rayOrigin + tMin * rayDir;
+    glm::vec3 exitPoint = rayOrigin + tMax * rayDir;
+    
 
-    glm::vec3 entryPoint = center - glm::vec3(length, breadth, height) * 0.5f;
-    glm::vec3 exitPoint = center + glm::vec3(length, breadth, height) * 0.5f;
+
+    // glm::vec3 entryPoint = center - glm::vec3(length, breadth, height) * 0.5f;
+    // glm::vec3 exitPoint = center + glm::vec3(length, breadth, height) * 0.5f;
 
 
 
