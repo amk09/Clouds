@@ -42,9 +42,9 @@ int main()
 
     glm::vec4 worldEye = camera.getViewMatrixInverse() * camera.pos;
 
-    glm::vec3 cloudCenter(100.0f, 100.0f, 10.0f); 
+    glm::vec3 cloudCenter(0.0f, 0.0f, 0.0f); 
     float length = .01f, breadth = .010f, h = .010f;
-    float densityOffset = 0.1f, densityMultiplier = 1.2f, lightAbsorption = 0.5f;
+    float densityOffset = 0.1f, densityMultiplier = .1f, lightAbsorption = 0.1f;
     glm::vec3 shapeOffset = glm::vec3(0.f, 0.f, 0.f);
     Cloud cloud(cloudCenter, length, breadth, h, densityOffset, shapeOffset , densityMultiplier, lightAbsorption);
     
