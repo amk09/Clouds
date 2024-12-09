@@ -8,7 +8,7 @@
 #include "rgba.h"
 
 
-void saveImage(std::vector<RGBA> Image, const std::string& filename)
+void saveImage(std::vector<RGBA> Image, const std::string& filename, int width, int height)
 
 {
     std::vector<unsigned char> pixelData;
@@ -20,7 +20,7 @@ void saveImage(std::vector<RGBA> Image, const std::string& filename)
     }
 
 
-    stbi_write_png(filename.c_str(), 1280, 720, 4, pixelData.data(), 1280 * 4);
+    stbi_write_png(filename.c_str(), width, height, 4, pixelData.data(), width * 4);
 
 }
 

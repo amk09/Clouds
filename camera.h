@@ -7,9 +7,9 @@ class Camera
 {
 public:
     Camera();
-    glm::vec4 pos = glm::vec4(0.f,0.f,0.f,1.f);
-    glm::vec4 look = glm::vec4(0.f,0.f,-1.f,0.f);
-    glm::vec4 up = glm::vec4(0.f,1.f,0.f,0.f);
+    glm::vec4 pos;
+    glm::vec4 look;
+    glm::vec4 up;
 
     glm::mat4 getViewMatrix();
 
