@@ -26,8 +26,8 @@ int main()
     // Light setup
 
     glm::vec3 lightPos(0.f,0.0f,-10.f);
-    glm::vec3 ligthColor(1.f,1.f,1.f);
-    float radius(0.1f);
+    glm::vec3 ligthColor(1.f,0.f,1.f);
+    float radius(0.2f);
 
     //Light light1(lightPos, ligthColor, radius);
 
@@ -48,18 +48,16 @@ int main()
 
     // Clouds setup 
 
-    glm::vec3 cloudCenter(0.0f, 0.0f, -10.0f); 
-
+    
     float length = 1.f;                    // Lenght  is along the x axis
     float breadth = 1.f;                   // Breadth is along the y axis 
-    float h = 1.f;                         // Height  is along the z axis
-    float densityOffset = 0.3f;             // Changes the density of cloud, less is more dense
+    float h = 1.f;                        // Height  is along the z axis
+    float densityOffset = 0.1f;             // Changes the density of cloud, less is more dense
     float densityMultiplier = 1.f;          // Increasing would increase density
-    float lightAbsorption = 0.5f;           // Increasing would darken the clouds  ; ideas : can tweak this value to make rain
+    float lightAbsorption = 0.7f;           // Increasing would darken the clouds  ; ideas : can tweak this value to make rain
     glm::vec3 shapeOffset(0.f, 0.f, 0.f);   // Movement x,y,z for directional movements
 
 
-    Cloud cloud(cloudCenter, length, breadth, h, densityOffset, shapeOffset , densityMultiplier, lightAbsorption);
     
                 
 
@@ -75,14 +73,16 @@ int main()
     omp_set_num_threads(omp_get_max_threads());
     float time = 0.0f; // Initialize time
     int frames_to_render = 240;
-    float x = 1.5f;
+    float x = 10.f;
 
     for (int frame = 0; frame < frames_to_render; ++frame) 
     { 
-        cloud.shapeOffset.x += 0.01f; // Updating cloud positions
-
-        lightPos = glm::vec3(x,0.0f,-10.f);
-        x -= 0.01f;
+        glm::vec3 cloudCenter(0.f, 0.f, -10.0f); 
+        Cloud cloud(cloudCenter, length, breadth, h, densityOffset, shapeOffset , densityMultiplier, lightAbsorption);
+        cloud.shapeOffset.x += 0.1f; // Updating cloud positions
+        
+        lightPos = glm::vec3(0.0f,0.0f,-20.f - x);
+        x -= 0.5f;
         Light light1(lightPos, ligthColor, radius);
 
 
@@ -108,8 +108,9 @@ int main()
 
                 glm::vec3 cloudDisplay = cloud.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), light1.pos, light1.emissionColor, backgroundColor, light1.radius);
                 glm::vec3 lightDisplay = light1.lightSphereWithGlow(worldRayDir, camera.pos);
-
-                Image[j * width + i] = convertVec3RGBA(cloudDisplay + lightDisplay);
+                glm::vec3 surfColor = implicitPlaneIntersect(glm::vec3(worldEye), glm::vec3(worldRayDir),-5.f, light1.pos, light1.emissionColor, glm::vec3(1.f,1.f,1.f));
+                //glm::vec3 surfColor = implicitWavySurfaceIntersect(glm::vec3(worldEye), glm::vec3(worldRayDir), -5.f, light1.pos, light1.emissionColor, glm::vec3(1.f,1.f,1.f));
+                Image[j * width + i] = convertVec3RGBA(cloudDisplay + lightDisplay + surfColor);
             }
         }
 

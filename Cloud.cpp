@@ -43,7 +43,7 @@ float Cloud::sampleDensity(glm::vec3 position) const
     baseShape = glm::min(baseShape, glm::length(uvw - glm::vec3(0.0f, 0.1f, 0.3f)) - 0.6f); // Sphere 3
 
     // Add fractal noise for natural variation
-    glm::vec3 noiseCoord = uvw * 5.0f;  
+    glm::vec3 noiseCoord = uvw * 5.0f;   // change here to 5.0f
     float fractalNoise = glm::perlin(noiseCoord) +
                          0.3f * glm::perlin(noiseCoord * 2.0f) + // Reduce contribution of higher octaves
                          0.15f * glm::perlin(noiseCoord * 4.0f);
@@ -75,13 +75,19 @@ float Cloud::lightMarch(glm::vec3 position, glm::vec3 LightPos, float radius) co
     // Compute attenuation using an inverse-square law
     // For a point light, intensity typically falls off as 1 / (distance^2).
     // Adding 1.0 to avoid division by zero at very small distances and to set a baseline intensity.
-    float a = 1.0f;   // Full initial brightness
-    float b = 0.14f;   // Steeper linear reduction
-    float c = 0.07f;   // Stronger quadratic reduction
-    float d = 0.017f;   // More pronounced exponential decay
-    float distanceAttenuation = a / (b + (c * dist) + d * dist*dist);
+    float a = 1.0f;   // Moderate initial intensity
+    float b = 0.14f;  // Slight linear reduction
+    float c = 0.07f;  // Mild quadratic reduction
+    float d = 0.017f; // Minimal exponential reduction
 
-    float transmittance = exp(-totalDensity * lightAbsorption * 1.2f) * distanceAttenuation;
+    // Add baseline and clamp for stability
+    float distanceAttenuation = a / (b + c * dist + d * dist * dist + 1e-6f);
+
+    // Smooth transition using smoothstep
+
+
+    // Use smoothAttenuation for realistic falloff
+    float transmittance = exp(-totalDensity * lightAbsorption * 1.2f) * distanceAttenuation ;
     return transmittance;
 }
 
@@ -236,8 +242,9 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
         hit = false; // No intersection, return background color
     }
 
-    tMin = glm::max(tMin, tzMin);
-    tMax = glm::min(tMax, tzMax);
+    float epsilon = 1e-6f;
+    tMin = glm::max(tMin, tzMin - epsilon);
+    tMax = glm::min(tMax, tzMax + epsilon);
 
     if (tMin < 0 && tMax < 0) {
        hit= false; // Intersection happens behind the ray origin
@@ -268,7 +275,8 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
     //while (dstTravelled < glm::length(glm::vec3(length, breadth, height))){
     while (dstTravelled < glm::length(entryPoint - exitPoint)) {
         glm::vec3 rayPos = entryPoint + rayDir * dstTravelled;
-        float density = sampleDensity(rayPos);
+        float density = sampleDensity(rayPos); 
+        //float density = glm::clamp(sampleDensity(rayPos) * stepSize, 0.0f, 1.0f);
 
         if (density > 0.0f) {
             float lightTransmittance = lightMarch(rayPos, lightPos, radius);
