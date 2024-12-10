@@ -305,3 +305,134 @@ glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDi
 
     return finalColor;
 }
+
+glm::vec3 Cloud::renderClouds(const glm::vec3& rayOrigin, const glm::vec3& rayDir, const glm::vec3& backgroundColor, std::vector<Light> l) const 
+{    
+
+    // glm::vec3 col = glm::vec3(0.42,0.62,1.1) - glm::vec3(0.4f * rayDir.y);
+    glm::vec3 col = backgroundColor;
+    // clouds
+    // float t = (2500.0-rayOrigin.y)/rayDir.y;
+    // if( t>0.0 )
+    // {
+    //     glm::vec3 pos = rayOrigin + t * rayDir;
+    //     glm::vec2 uv = glm::vec2(pos.x, pos.z);
+    //     float cl = fbm_9( uv * 0.00104f );
+    //     float dl = smoothstep(-0.2,0.6,cl);
+    //     col = mix( col, glm::vec3(1.0), 0.12*dl );
+    // }
+    
+    // // sun glare    
+    // float sun = glm::clamp( glm::dot(kSunDir,rayDir), 0.0f, 1.0f );
+    // col +=  0.2f * glm::vec3(1.0f, 0.6f, 0.3f) * glm::pow(sun, 32.0f);
+
+
+    //check if the ray hits the box
+    bool hit = true;
+
+    // Define the bounding box limits
+    glm::vec3 minBounds = center - glm::vec3(length, breadth, height) * 0.5f;
+    glm::vec3 maxBounds = center + glm::vec3(length, breadth, height) * 0.5f;
+
+    // Perform ray-box intersection test
+    float tMin = (minBounds.x - rayOrigin.x) / rayDir.x;
+    float tMax = (maxBounds.x - rayOrigin.x) / rayDir.x;
+
+    if (tMin > tMax) std::swap(tMin, tMax);
+
+    float tyMin = (minBounds.y - rayOrigin.y) / rayDir.y;
+    float tyMax = (maxBounds.y - rayOrigin.y) / rayDir.y;
+
+    if (tyMin > tyMax) std::swap(tyMin, tyMax);
+
+    if ((tMin > tyMax) || (tyMin > tMax)) {
+       hit= false; // No intersection, return background color
+
+    }
+
+    tMin = glm::max(tMin, tyMin);
+    tMax = glm::min(tMax, tyMax);
+
+    float tzMin = (minBounds.z - rayOrigin.z) / rayDir.z;
+    float tzMax = (maxBounds.z - rayOrigin.z) / rayDir.z;
+
+    if (tzMin > tzMax) std::swap(tzMin, tzMax);
+
+    if ((tMin > tzMax) || (tzMin > tMax)) {
+
+        hit = false; // No intersection, return background color
+    }
+
+    float epsilon = 1e-6f;
+    tMin = glm::max(tMin, tzMin - epsilon);
+    tMax = glm::min(tMax, tzMax + epsilon);
+
+    if (tMin < 0 && tMax < 0) {
+       hit= false; // Intersection happens behind the ray origin
+    }
+
+    if(hit == false){
+        return col;
+    }
+
+
+
+    //start ray marching.
+    // Ray intersects the box; start ray tracing within the box
+    tMin = glm::max(0.f,tMin);
+    glm::vec3 entryPoint = rayOrigin + tMin * rayDir;
+    glm::vec3 exitPoint = rayOrigin + tMax * rayDir;
+
+    // glm::vec3 entryPoint = center - glm::vec3(length, breadth, height) * 0.5f;
+    // glm::vec3 exitPoint = center + glm::vec3(length, breadth, height) * 0.5f;
+
+
+
+    float stepSize = glm::length(glm::vec3(length, breadth, height)) / float(numSteps);
+    float transmittance = 1.0f;
+    glm::vec3 lightEnergy(0.0f);
+    float dstTravelled = 0.0f;
+
+    //while (dstTravelled < glm::length(glm::vec3(length, breadth, height))){
+    while (dstTravelled < glm::length(entryPoint - exitPoint)) {
+        glm::vec3 rayPos = entryPoint + rayDir * dstTravelled;
+        float density = sampleDensity(rayPos); 
+        //float density = glm::clamp(sampleDensity(rayPos) * stepSize, 0.0f, 1.0f);
+
+        if (density > 0.0f) {
+            
+
+            for (const auto& light : l) {
+                // Get light properties
+                glm::vec3 lightPos = light.pos;
+                glm::vec3 lightColor = light.emissionColor;
+                float radius = light.radius;
+
+                // Calculate light transmittance for this light
+                float lightTransmittance = lightMarch(rayPos, lightPos, radius);
+
+                // Accumulate energy contribution
+                lightEnergy += density * stepSize * transmittance * lightTransmittance * lightColor;
+            }
+
+
+            // Update transmittance
+            transmittance *= exp(-density * stepSize * lightAbsorption);
+
+            // Early exit if transmittance is negligible
+            if (transmittance < 0.01f)
+                break;
+        }
+
+        dstTravelled += stepSize;
+    }
+
+
+
+    glm::vec3 cloudColor = lightEnergy;
+          //agian, can repace col w. background color as before
+    glm::vec3 finalColor = col * transmittance + cloudColor;
+
+
+    return finalColor;
+}

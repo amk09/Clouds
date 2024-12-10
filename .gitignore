@@ -3,3 +3,8 @@
 CMakeLists.txt.user
 output/
 .vscode/
+demo1
+demo2
+demo3
+*.zip
+

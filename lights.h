@@ -2,7 +2,10 @@
 #define LIGHT_H
 #include "glm/glm.hpp"
 #include "glm/gtx/transform.hpp"
+#include "glm/gtx/rotate_vector.hpp"
 #include <algorithm>
+#include <vector>
+#include <cmath>
 
 class Light {
 public:
@@ -104,6 +107,60 @@ inline glm::vec3 implicitPlaneIntersect(const glm::vec3& rayOrigin, const glm::v
     return finalColor;
 }
 
+inline glm::vec3 implicitPlaneIntersectWithLights(
+    const glm::vec3& rayOrigin,
+    const glm::vec3& rayDir,
+    float y,
+    const std::vector<Light>& lights,
+    const glm::vec3& surfaceBaseColor
+) {
+    // Check if the ray is parallel to the plane
+    if (glm::abs(rayDir.y) < 1e-6) {
+        // No intersection, return black (no color)
+        return glm::vec3(0.0f, 0.0f, 0.0f);
+    }
+
+    // Compute the t value for the intersection with the plane
+    float t = (y - rayOrigin.y) / rayDir.y;
+
+    // If t is negative, the intersection is behind the ray origin
+    if (t < 0.0f) {
+        return glm::vec3(0.0f, 0.0f, 0.0f);
+    }
+
+    // Compute the intersection point on the plane
+    glm::vec3 intersectionPoint = rayOrigin + t * rayDir;
+
+    // Initialize the final color
+    glm::vec3 finalColor(0.0f, 0.0f, 0.0f);
+
+    // Iterate over all lights
+    for (const auto& light : lights) {
+        glm::vec3 lightPos = light.pos;
+        glm::vec3 lightColor = light.emissionColor;
+
+        // Compute the distance between the light and the intersection point
+        float distToLight = glm::length(lightPos - intersectionPoint);
+
+        // Light attenuation using an inverse-square law
+        float attenuation = glm::clamp(1.0f / (1.0f + distToLight * distToLight / (10.f * 10.f)), 0.0f, 1.0f);
+
+        // Compute the light direction
+        glm::vec3 dirToLight = glm::normalize(lightPos - intersectionPoint);
+
+        // Surface normal (upward for the plane)
+        glm::vec3 normal(0.0f, 1.0f, 0.0f);
+
+        // Compute diffuse lighting (Lambertian shading)
+        float diffuse = glm::clamp(glm::dot(normal, dirToLight), 0.0f, 1.0f);
+
+        // Combine base color, light color, and attenuation
+        finalColor += surfaceBaseColor * lightColor * diffuse * attenuation;
+    }
+
+    return finalColor;
+}
+
 
 inline glm::vec3 implicitWavySurfaceIntersect(const glm::vec3& rayOrigin, const glm::vec3& rayDir, float y, const glm::vec3& lightPos, const glm::vec3& lightColor, const glm::vec3& surfaceBaseColor) {
     float amplitude = 1.0f;                 // Amplitude of the waves
@@ -169,5 +226,60 @@ inline glm::vec3 implicitWavySurfaceIntersect(const glm::vec3& rayOrigin, const 
     return finalColor;
 }
 
+
+// Light(glm::vec3 position, glm::vec3 color, float radius)
+
+inline std::vector<Light> lights(int n, glm::vec3 center, float r, float offset, glm::vec3 rotationAxis) {
+    std::vector<Light> ans;
+
+    // Normalize the rotation axis to ensure consistent behavior
+    rotationAxis = glm::normalize(rotationAxis);
+
+    // Determine the base plane for light placement
+    glm::vec3 baseVector1, baseVector2;
+    if (rotationAxis == glm::vec3(0.0f, 1.0f, 0.0f)) { // Y-axis rotation
+        baseVector1 = glm::vec3(1.0f, 0.0f, 0.0f);     // X direction
+        baseVector2 = glm::vec3(0.0f, 0.0f, 1.0f);     // Z direction
+    } else if (rotationAxis == glm::vec3(1.0f, 0.0f, 0.0f)) { // X-axis rotation
+        baseVector1 = glm::vec3(0.0f, 1.0f, 0.0f);     // Y direction
+        baseVector2 = glm::vec3(0.0f, 0.0f, 1.0f);     // Z direction
+    } else if (rotationAxis == glm::vec3(0.0f, 0.0f, 1.0f)) { // Z-axis rotation
+        baseVector1 = glm::vec3(1.0f, 0.0f, 0.0f);     // X direction
+        baseVector2 = glm::vec3(0.0f, 1.0f, 0.0f);     // Y direction
+    } else {
+        throw std::invalid_argument("Rotation axis must be one of the principal axes (X, Y, or Z).");
+    }
+
+    for (int i = 0; i < n; ++i) {
+        // Compute the angle for this light in radians
+        float angle = 2.0f * glm::pi<float>() * i / n + offset;
+
+        // Compute the initial position of the light in the determined base plane
+        glm::vec3 localPos = r * static_cast<float>(cos(angle)) * baseVector1 + 
+                             r * static_cast<float>(sin(angle)) * baseVector2;
+
+        // Rotate the local position around the rotation axis
+        glm::vec3 lightPos = glm::rotate(localPos, angle, rotationAxis);
+
+        // Translate the rotated position to the circle's center
+        lightPos += center;
+
+        // Compute a unique color for this light
+        glm::vec3 lightColor(
+            static_cast<float>(i) / n,                  // Red component
+            static_cast<float>((i + n / 3) % n) / n,   // Green component
+            static_cast<float>((i + 2 * n / 3) % n) / n // Blue component
+        );
+
+        // Create a light with a fixed radius
+        float lightRadius = 0.05f;
+        Light light(lightPos, lightColor, lightRadius);
+
+        // Add the light to the vector
+        ans.push_back(light);
+    }
+
+    return ans;
+}
 
 #endif // LIGHT_H

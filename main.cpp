@@ -14,8 +14,31 @@
 
 
 
-int main()
+int main(int argc, char* argv[])
 {
+    // int frameBegin;
+    // int frameEnd;
+    int seconds;
+
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <int1> \n";
+        return 1;
+    }
+
+    try {
+     
+        // frameBegin = std::stoi(argv[1]); 
+        // frameEnd = std::stoi(argv[2]); 
+        seconds = std::stoi(argv[1]); 
+
+    } catch (const std::invalid_argument& e) {
+        std::cerr << "Error: Please provide valid integers.\n";
+        return 1;
+    } catch (const std::out_of_range& e) {
+        std::cerr << "Error: Integer out of range.\n";
+        return 1;
+    }
+
     // Output setup     
     int height = 480;
     int width = 640;
@@ -26,7 +49,7 @@ int main()
     // Light setup
 
     glm::vec3 lightPos(0.f,0.0f,-10.f);
-    glm::vec3 ligthColor(1.f,0.f,1.f);
+    glm::vec3 ligthColor(1.f,1.f,1.f);
     float radius(0.2f);
 
     //Light light1(lightPos, ligthColor, radius);
@@ -49,17 +72,13 @@ int main()
     // Clouds setup 
 
     
-    float length = 1.f;                    // Lenght  is along the x axis
-    float breadth = 1.f;                   // Breadth is along the y axis 
-    float h = 1.f;                        // Height  is along the z axis
-    float densityOffset = 0.1f;             // Changes the density of cloud, less is more dense
-    float densityMultiplier = 1.f;          // Increasing would increase density
-    float lightAbsorption = 0.7f;           // Increasing would darken the clouds  ; ideas : can tweak this value to make rain
+    float length = 1.5f;                    // Lenght  is along the x axis
+    float breadth = 1.5f;                   // Breadth is along the y axis 
+    float h = 1.5f;                        // Height  is along the z axis
+    float densityOffset = 0.01f;             // Changes the density of cloud, less is more dense
+    float densityMultiplier = 0.1f;          // Increasing would increase density
+    float lightAbsorption = 0.1f;           // Increasing would darken the clouds  ; ideas : can tweak this value to make rain
     glm::vec3 shapeOffset(0.f, 0.f, 0.f);   // Movement x,y,z for directional movements
-
-
-    
-                
 
     // Define start and end positions for the light
     // glm::vec3 startPos = glm::vec3(0.f,0.-0.7f,0.f);   // at camera
@@ -72,18 +91,35 @@ int main()
 
     omp_set_num_threads(omp_get_max_threads());
     float time = 0.0f; // Initialize time
-    int frames_to_render = 240;
+    //int seconds = 15;
+    int frames_to_render =  seconds * 24;
     float x = 10.f;
 
+    glm::vec3 initialPosition = glm::vec3(0.0f,10.0f,-20.f);
+    glm::vec3 finalPosition = glm::vec3(0.0f,0.0f,-10.f);   
+    glm::vec3 movDir = glm::normalize(finalPosition - initialPosition);
+    float distance = glm::length(finalPosition - initialPosition);
+    float t = distance / static_cast<float>(frames_to_render);
+    int off = 0.f;
+    glm::vec3 rotationAxis(0.0f, 0.0f, 1.0f);
+
+    // for (int frame = 0; frame < frames_to_render; ++frame) 
     for (int frame = 0; frame < frames_to_render; ++frame) 
     { 
-        glm::vec3 cloudCenter(0.f, 0.f, -10.0f); 
-        Cloud cloud(cloudCenter, length, breadth, h, densityOffset, shapeOffset , densityMultiplier, lightAbsorption);
-        cloud.shapeOffset.x += 0.1f; // Updating cloud positions
+        // glm::vec3 cloudCenter(0.f, 2.5f, -10.0f); 
+        // Cloud cloud1(cloudCenter, length, breadth, h, densityOffset, shapeOffset , densityMultiplier, lightAbsorption);
+        // cloud1.shapeOffset.x += 0.1f; // Updating cloud positions
+
+        glm::vec3 cloudCenter2(0.f, 0.0f, -20.0f); 
+        Cloud cloud2(cloudCenter2, length, breadth, h, densityOffset * 8, shapeOffset , densityMultiplier * 2, lightAbsorption * 2);
+        cloud2.shapeOffset.x += 0.2f; // Updating cloud positions
         
-        lightPos = glm::vec3(0.0f,0.0f,-20.f - x);
-        x -= 0.5f;
-        Light light1(lightPos, ligthColor, radius);
+        // lightPos = initialPosition + t * frame * movDir;
+        // Light light1(lightPos, ligthColor, radius);
+        
+        
+        std::vector<Light> l = lights(5, glm::vec3(0.f,0.f,-20.f), 2.f, off,rotationAxis);
+        off += 1.f;
 
 
         // OpenMP parallel loop for rendering
@@ -101,22 +137,23 @@ int main()
                 glm::vec4 raydir = glm::normalize((uvk - camera.pos));
                 glm::vec4 worldRayDir = glm::normalize(camera.getViewMatrixInverse() * raydir); 
 
-                // Render pixel using the updated cloud position
-                // Image[j * width + i] = raymarchCloud(
-                //     glm::vec3(worldEye), glm::vec3(worldRayDir), cloud, light1.pos, light1.emissionColor, backgroundColor, light1.radius);
+                glm::vec3 disp(0.f,0.f,0.f);
+                for(auto x : l)
+                    disp += x.lightSphereWithGlow(worldRayDir, camera.pos);
 
-
-                glm::vec3 cloudDisplay = cloud.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), light1.pos, light1.emissionColor, backgroundColor, light1.radius);
-                glm::vec3 lightDisplay = light1.lightSphereWithGlow(worldRayDir, camera.pos);
-                glm::vec3 surfColor = implicitPlaneIntersect(glm::vec3(worldEye), glm::vec3(worldRayDir),-5.f, light1.pos, light1.emissionColor, glm::vec3(1.f,1.f,1.f));
+                //glm::vec3 cloudDisplay1 = cloud1.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), light1.pos, light1.emissionColor, backgroundColor, light1.radius);
+                glm::vec3 cloudDisplay2 = cloud2.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), backgroundColor, l);
+                //glm::vec3 lightDisplay = light1.lightSphereWithGlow(worldRayDir, camera.pos);
+                glm::vec3 surfColor = implicitPlaneIntersectWithLights(glm::vec3(worldEye), glm::vec3(worldRayDir),-5.f, l , glm::vec3(1.f,1.f,1.f));
+                //glm::vec3 surfColor = implicitPlaneIntersect(glm::vec3(worldEye), glm::vec3(worldRayDir),-5.f, light1.pos, light1.emissionColor, glm::vec3(1.f,1.f,1.f));
                 //glm::vec3 surfColor = implicitWavySurfaceIntersect(glm::vec3(worldEye), glm::vec3(worldRayDir), -5.f, light1.pos, light1.emissionColor, glm::vec3(1.f,1.f,1.f));
-                Image[j * width + i] = convertVec3RGBA(cloudDisplay + lightDisplay + surfColor);
+                Image[j * width + i] = convertVec3RGBA(cloudDisplay2 + surfColor + disp);
             }
         }
 
         // Save the frame
 
-        std::string filename = "output/cloud_frame_" + std::to_string(frame) + ".png";
+        std::string filename = "demo3/cloud_frame_" + std::to_string(frame) + ".png";
         saveImage(Image, filename.c_str(), width, height);
         std::cout << "Saved frame: " << filename << std::endl;
     }
