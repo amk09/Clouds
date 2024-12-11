@@ -74,16 +74,16 @@ int main(int argc, char* argv[])
 
 
     // Clouds setup 
-    float length1 = 10.f;                    // Lenght  is along the x axis
-    float breadth1 = 1.5f;                   // Breadth is along the y axis 
-    float h1 = 10.f;    
+    float length1 = 15.f;                    // Lenght  is along the x axis
+    float breadth1 = 2.0f;                   // Breadth is along the y axis 
+    float h1 = 15.f;    
     
     float length = 1.5f;                    // Lenght  is along the x axis
     float breadth = 1.5f;                   // Breadth is along the y axis 
     float h = 1.5f;                        // Height  is along the z axis
-    float densityOffset = 0.1f;             // Changes the density of cloud, less is more dense
-    float densityMultiplier = 0.2f;          // Increasing would increase density
-    float lightAbsorption = 0.1f;           // Increasing would darken the clouds  ; ideas : can tweak this value to make rain
+    float densityOffset = 0.01f;             // Changes the density of cloud, less is more dense
+    float densityMultiplier = 1.f;          // Increasing would increase density
+    float lightAbsorption = 0.5f;           // Increasing would darken the clouds  ; ideas : can tweak this value to make rain
     glm::vec3 shapeOffset(0.f, 0.f, 0.f);   // Movement x,y,z for directional movements
 
     // Define start and end positions for the light
@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
     { 
         glm::vec3 cloudCenter(0.f, 3.f, -10.0f); 
         Cloud cloud1(cloudCenter, length1, breadth1, h1, densityOffset, shapeOffset , densityMultiplier, lightAbsorption);
-        cloud1.shapeOffset.x += 0.1f; // Updating cloud positions
+        cloud1.shapeOffset.x += 2.f; // Updating cloud positions
 
         glm::vec3 cloudCenter2(0.f, 0.0f, -20.0f); 
         Cloud cloud2(cloudCenter2, length, breadth, h, densityOffset * 8, shapeOffset , densityMultiplier * 2, lightAbsorption * 2);
@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
         // Light light1(lightPos, ligthColor, radius);
         
         
-        std::vector<Light> l = lights(2, glm::vec3(0.f,0.f,-5.f), 2.f, off,rotationAxis);
+        std::vector<Light> l = lights(5, glm::vec3(0.f,0.f,-5.f), 3.f, off,rotationAxis);
         //Light lig(glm::vec3(0.f,0.f,-10.f),glm::vec3(1.0f,1.0f,1.0f),.5f);
         off += .05f;
 
@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
                 
                 //new addition ends
 
-                //glm::vec3 cloudDisplay1 = cloud1.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), backgroundColor, l);
+                glm::vec3 cloudDisplay1 = cloud1.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), backgroundColor, l);
                 //glm::vec3 cloudDisplay2 = cloud2.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), backgroundColor, l);
                 //glm::vec3 lightDisplay = light1.lightSphereWithGlow(worldRayDir, camera.pos);
                 //glm::vec3 mountains = ReturnMountains(glm::vec3(worldEye), glm::vec3(worldRayDir), backgroundColor, -5.f);
@@ -165,8 +165,8 @@ int main(int argc, char* argv[])
                 //glm::vec3 surfColor = proceduralMountain(glm::vec3(worldEye), glm::vec3(worldRayDir),l,glm::vec3(1.f,1.f,1.f),20.f,2.f,.3f,-5.f);
                 //glm::vec3 surfColor = implicitPlaneIntersect(glm::vec3(worldEye), glm::vec3(worldRayDir),-5.f, light1.pos, light1.emissionColor, glm::vec3(1.f,1.f,1.f));
                 //glm::vec3 surfColor = implicitWavySurfaceIntersect(glm::vec3(worldEye), glm::vec3(worldRayDir), -5.f, light1.pos, light1.emissionColor, glm::vec3(1.f,1.f,1.f));
-                glm::vec3 color = RayMarcher::rayMarch(glm::vec3(worldEye), glm::vec3(worldRayDir), l,backgroundColor, -0.5f);
-                Image[j * width + i] = convertVec3RGBA(disp + color);
+                glm::vec3 color = RayMarcher::rayMarch(glm::vec3(worldEye), glm::vec3(worldRayDir),l,backgroundColor, -0.5f);
+                Image[j * width + i] = convertVec3RGBA(cloudDisplay1 + disp + color);
             }
         }
 

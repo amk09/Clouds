@@ -25,8 +25,8 @@ Cloud::Cloud(glm::vec3 center, float length, float breadth, float height, float 
       shapeOffset(shapeOffset),
       densityMultiplier(densityMultiplier),
       lightAbsorption(lightAbsorption),
-      numSteps(32),
-      numStepsLight(16) {}
+      numSteps(64),
+      numStepsLight(32) {}
 
 
 
