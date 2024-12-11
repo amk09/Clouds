@@ -111,6 +111,7 @@ int main(int argc, char* argv[])
 
     for (int frame = 0; frame < frames_to_render; ++frame) 
     {
+
         glm::vec3 cloudCenter(0.f, 3.f, -10.0f); 
         Cloud cloud1(cloudCenter, length1, breadth1, h1, densityOffset, shapeOffset , densityMultiplier, lightAbsorption);
         cloud1.shapeOffset.x = 2.f * frame_n; // Updating cloud positions
@@ -122,7 +123,7 @@ int main(int argc, char* argv[])
         // lightPos = initialPosition + t * frame * movDir;
         // Light light1(lightPos, ligthColor, radius);
         
-        off = .05f * frame_n;
+        off = .01f * frame_n;
         std::vector<Light> l = lights(5, glm::vec3(0.f,0.f,-5.f), 2.f, off,rotationAxis);
         //Light lig(glm::vec3(0.f,0.f,-10.f),glm::vec3(1.0f,1.0f,1.0f),.5f);
         
@@ -174,7 +175,7 @@ int main(int argc, char* argv[])
         std::string filename = "mountains/cloud_frame_" + std::to_string(frame) + ".png";
         saveImage(Image, filename.c_str(), width, height);
         std::cout << "Saved frame: " << filename << std::endl;
-    }
+    }   
 
     return 0;
 }
