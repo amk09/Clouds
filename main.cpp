@@ -43,8 +43,8 @@ int main(int argc, char* argv[])
     }
 
     // Output setup     
-    int height = 640;
-    int width = 480;
+    int height = 480;
+    int width = 640;
 
     glm::vec3 backgroundColor(0.f,0.f,0.f); //(0.5f, 0.7f, 1.0f); 
     std::vector<RGBA> Image(width * height, RGBA(0, 0, 0, 255));
@@ -171,7 +171,7 @@ int main(int argc, char* argv[])
 
         // Save the frame
 
-        std::string filename = "mountains/cloud_frame_" + std::to_string(frame_n) + ".png";
+        std::string filename = "mountains/cloud_frame_" + std::to_string(frame) + ".png";
         saveImage(Image, filename.c_str(), width, height);
         std::cout << "Saved frame: " << filename << std::endl;
     }
