@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
 {
     // int frameBegin;
     // int frameEnd;
-    int seconds;
+    int frame_n;
 
     if (argc != 2) {
         std::cerr << "Usage: " << argv[0] << " <int1> \n";
@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
      
         // frameBegin = std::stoi(argv[1]); 
         // frameEnd = std::stoi(argv[2]); 
-        seconds = std::stoi(argv[1]); 
+        frame_n = std::stoi(argv[1]); 
 
     } catch (const std::invalid_argument& e) {
         std::cerr << "Error: Please provide valid integers.\n";
@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
     omp_set_num_threads(omp_get_max_threads());
     float time = 0.0f; // Initialize time
     //int seconds = 15;
-    int frames_to_render =  seconds * 24;
+    int frames_to_render =  frame_n * 24;
     float x = 10.f;
 
     glm::vec3 initialPosition = glm::vec3(0.0f,10.0f,-20.f);
@@ -110,23 +110,22 @@ int main(int argc, char* argv[])
     glm::vec3 rotationAxis(0.0f, 1.0f, 0.0f);
 
     // for (int frame = 0; frame < frames_to_render; ++frame) 
-    for (int frame = 0; frame < frames_to_render; ++frame) 
-    { 
+
         glm::vec3 cloudCenter(0.f, 3.f, -10.0f); 
         Cloud cloud1(cloudCenter, length1, breadth1, h1, densityOffset, shapeOffset , densityMultiplier, lightAbsorption);
-        cloud1.shapeOffset.x += 2.f; // Updating cloud positions
+        cloud1.shapeOffset.x = 2.f * frame_n; // Updating cloud positions
 
         glm::vec3 cloudCenter2(0.f, 0.0f, -20.0f); 
         Cloud cloud2(cloudCenter2, length, breadth, h, densityOffset * 8, shapeOffset , densityMultiplier * 2, lightAbsorption * 2);
-        cloud2.shapeOffset.x += 1.f; // Updating cloud positions
+        cloud2.shapeOffset.x = 1.f * frame_n; // Updating cloud positions
         
         // lightPos = initialPosition + t * frame * movDir;
         // Light light1(lightPos, ligthColor, radius);
         
-        
+        off = .05f * frame_n;
         std::vector<Light> l = lights(5, glm::vec3(0.f,0.f,-5.f), 2.f, off,rotationAxis);
         //Light lig(glm::vec3(0.f,0.f,-10.f),glm::vec3(1.0f,1.0f,1.0f),.5f);
-        off += .05f;
+        
 
 
         // OpenMP parallel loop for rendering
@@ -172,10 +171,10 @@ int main(int argc, char* argv[])
 
         // Save the frame
 
-        std::string filename = "mountains/cloud_frame_" + std::to_string(frame) + ".png";
+        std::string filename = "mountains/cloud_frame_" + std::to_string(frame_n) + ".png";
         saveImage(Image, filename.c_str(), width, height);
         std::cout << "Saved frame: " << filename << std::endl;
-    }
+
 
 
     return 0;
