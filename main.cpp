@@ -11,7 +11,7 @@
 #include "src/rgba.h"
 #include "src/backend.h"
 #include "Cloud.h"
-#include "terrain.h"
+#include "raymarcher.h"
 
 int main(int argc, char* argv[])
 {
@@ -151,12 +151,13 @@ int main(int argc, char* argv[])
                 //glm::vec3 cloudDisplay1 = cloud1.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), backgroundColor, l);
                 //glm::vec3 cloudDisplay2 = cloud2.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), backgroundColor, l);
                 //glm::vec3 lightDisplay = light1.lightSphereWithGlow(worldRayDir, camera.pos);
-                glm::vec3 mountains = ReturnMountains(glm::vec3(worldEye), glm::vec3(worldRayDir), backgroundColor, -5.f);
-                glm::vec3 surfColor = implicitPlaneIntersectWithLights(glm::vec3(worldEye), glm::vec3(worldRayDir),-5.f, l , glm::vec3(1.f,1.f,1.f));
+                //glm::vec3 mountains = ReturnMountains(glm::vec3(worldEye), glm::vec3(worldRayDir), backgroundColor, -5.f);
+                //glm::vec3 surfColor = implicitPlaneIntersectWithLights(glm::vec3(worldEye), glm::vec3(worldRayDir),-5.f, l , glm::vec3(1.f,1.f,1.f));
                 //glm::vec3 surfColor = proceduralMountain(glm::vec3(worldEye), glm::vec3(worldRayDir),l,glm::vec3(1.f,1.f,1.f),20.f,2.f,.3f,-5.f);
                 //glm::vec3 surfColor = implicitPlaneIntersect(glm::vec3(worldEye), glm::vec3(worldRayDir),-5.f, light1.pos, light1.emissionColor, glm::vec3(1.f,1.f,1.f));
                 //glm::vec3 surfColor = implicitWavySurfaceIntersect(glm::vec3(worldEye), glm::vec3(worldRayDir), -5.f, light1.pos, light1.emissionColor, glm::vec3(1.f,1.f,1.f));
-                Image[j * width + i] = convertVec3RGBA(mountains);
+                glm::vec3 color = RayMarcher::rayMarch(glm::vec3(worldEye), glm::vec3(worldRayDir),-0.5f);
+                Image[j * width + i] = convertVec3RGBA(color);
             }
         }
 
