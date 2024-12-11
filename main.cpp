@@ -104,8 +104,8 @@ int main()
                 // Render pixel using the updated cloud position
                 // Image[j * width + i] = raymarchCloud(
                 //     glm::vec3(worldEye), glm::vec3(worldRayDir), cloud, light1.pos, light1.emissionColor, backgroundColor, light1.radius);
-
-                backgroundColor = glm::mix(glm::vec3(1.f, 212.f/225.f, 166.f/255.f), glm::vec3(204.f/255.f,235.f/255.f,1.f),j*1.0f);
+                float normalizedJ = static_cast<float>(j) / static_cast<float>(height - 1);
+                backgroundColor = glm::mix(glm::vec3(0.1f, 1.f- 212.f/225.f, 1.f- 166.f/255.f), glm::vec3(1.f-204.f/255.f,1.f-235.f/255.f,1.f), normalizedJ);
                 glm::vec3 cloudDisplay = cloud.renderClouds( glm::vec3(worldEye),
                                                             glm::vec3(worldRayDir),
                                                             0.f,
