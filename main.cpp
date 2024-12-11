@@ -50,11 +50,11 @@ int main()
 
     glm::vec3 cloudCenter(0.0f, 0.0f, -10.0f); 
 
-    float length = 1.f;                    // Lenght  is along the x axis
-    float breadth = 1.f;                   // Breadth is along the y axis 
-    float h = 1.f;                         // Height  is along the z axis
-    float densityOffset = 0.3f;             // Changes the density of cloud, less is more dense
-    float densityMultiplier = 1.f;          // Increasing would increase density
+    float length = 4.f;                    // Lenght  is along the x axis
+    float breadth = 4.f;                   // Breadth is along the y axis 
+    float h = 4.f;                         // Height  is along the z axis
+    float densityOffset = 0.1f;             // Changes the density of cloud, less is more dense
+    float densityMultiplier = 1.2f;          // Increasing would increase density
     float lightAbsorption = 0.5f;           // Increasing would darken the clouds  ; ideas : can tweak this value to make rain
     glm::vec3 shapeOffset(0.f, 0.f, 0.f);   // Movement x,y,z for directional movements
 
@@ -79,7 +79,7 @@ int main()
 
     for (int frame = 0; frame < frames_to_render; ++frame) 
     { 
-        cloud.shapeOffset.x += 0.01f; // Updating cloud positions
+        cloud.shapeOffset.x += glm::sin(time); // Updating cloud positions
 
         lightPos = glm::vec3(x,0.0f,-10.f);
         x -= 0.01f;
@@ -105,11 +105,18 @@ int main()
                 // Image[j * width + i] = raymarchCloud(
                 //     glm::vec3(worldEye), glm::vec3(worldRayDir), cloud, light1.pos, light1.emissionColor, backgroundColor, light1.radius);
 
-
-                glm::vec3 cloudDisplay = cloud.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), light1.pos, light1.emissionColor, backgroundColor, light1.radius);
+                backgroundColor = glm::mix(glm::vec3(1.f, 212.f/225.f, 166.f/255.f), glm::vec3(204.f/255.f,235.f/255.f,1.f),j*1.0f);
+                glm::vec3 cloudDisplay = cloud.renderClouds( glm::vec3(worldEye),
+                                                            glm::vec3(worldRayDir),
+                                                            0.f,
+                                                            100.f,
+                                                            100.f,  // This is fine if `resT` is a value (not a reference)
+                                                            glm::vec2(1.f),
+                                                            backgroundColor);
                 glm::vec3 lightDisplay = light1.lightSphereWithGlow(worldRayDir, camera.pos);
 
                 Image[j * width + i] = convertVec3RGBA(cloudDisplay + lightDisplay);
+                time += .01f;
             }
         }
 

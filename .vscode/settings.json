@@ -75,6 +75,9 @@
         "memory_resource": "cpp",
         "numeric": "cpp",
         "random": "cpp",
-        "utility": "cpp"
+        "utility": "cpp",
+        "charconv": "cpp",
+        "forward_list": "cpp",
+        "queue": "cpp"
     }
 }
