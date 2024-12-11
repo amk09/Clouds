@@ -11,20 +11,7 @@
 #include "src/rgba.h"
 #include "src/backend.h"
 #include "Cloud.h"
-
-#include "config.h"
-#include "noise.h"
 #include "terrain.h"
-#include "trees.h"
-#include "terrain_and_trees.h" 
-
-float cloudsShadowFlat(glm::vec3 ro, glm::vec3 rd) {
-    return 1.0f; // stub no clouds
-}
- glm::vec4 fbmd_7(glm::vec3 x) {
-    return glm::vec4(0,0,0,0); 
-}
-
 
 int main(int argc, char* argv[])
 {
@@ -72,8 +59,6 @@ int main(int argc, char* argv[])
     camera.pos = glm::vec4(0.0f, 0.f, 0.0f, 1.0f); 
     camera.look = glm::normalize(glm::vec4(0.f,0.f,-1.f,0.f)); 
     camera.up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f); 
-
-
 
 
     float k = 0.1f;
@@ -159,32 +144,25 @@ int main(int argc, char* argv[])
                     disp += x.lightSphereWithGlow(worldRayDir, camera.pos);
 
                 // new addition
-                float resT;
-                int obj;
-                glm::vec3 finalColor_terrain = computeTerrainAndTreesColor(
-                    glm::vec3(camera.pos), glm::vec3(worldRayDir), 
-                    backgroundColor,
-                    l[0].pos, l[0].emissionColor,
-                    resT,
-                    obj
-                );
+
                 
                 //new addition ends
 
-                glm::vec3 cloudDisplay1 = cloud1.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), backgroundColor, l);
-                glm::vec3 cloudDisplay2 = cloud2.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), backgroundColor, l);
+                //glm::vec3 cloudDisplay1 = cloud1.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), backgroundColor, l);
+                //glm::vec3 cloudDisplay2 = cloud2.renderClouds(glm::vec3(worldEye), glm::vec3(worldRayDir), backgroundColor, l);
                 //glm::vec3 lightDisplay = light1.lightSphereWithGlow(worldRayDir, camera.pos);
-                //glm::vec3 surfColor = implicitPlaneIntersectWithLights(glm::vec3(worldEye), glm::vec3(worldRayDir),-5.f, l , glm::vec3(1.f,1.f,1.f));
-                glm::vec3 surfColor = proceduralMountain(glm::vec3(worldEye), glm::vec3(worldRayDir),l,glm::vec3(1.f,1.f,1.f),20.f,2.f,.3f,-5.f);
+                glm::vec3 mountains = ReturnMountains(glm::vec3(worldEye), glm::vec3(worldRayDir), backgroundColor, -5.f);
+                glm::vec3 surfColor = implicitPlaneIntersectWithLights(glm::vec3(worldEye), glm::vec3(worldRayDir),-5.f, l , glm::vec3(1.f,1.f,1.f));
+                //glm::vec3 surfColor = proceduralMountain(glm::vec3(worldEye), glm::vec3(worldRayDir),l,glm::vec3(1.f,1.f,1.f),20.f,2.f,.3f,-5.f);
                 //glm::vec3 surfColor = implicitPlaneIntersect(glm::vec3(worldEye), glm::vec3(worldRayDir),-5.f, light1.pos, light1.emissionColor, glm::vec3(1.f,1.f,1.f));
                 //glm::vec3 surfColor = implicitWavySurfaceIntersect(glm::vec3(worldEye), glm::vec3(worldRayDir), -5.f, light1.pos, light1.emissionColor, glm::vec3(1.f,1.f,1.f));
-                Image[j * width + i] = convertVec3RGBA(cloudDisplay2  + disp + finalColor_terrain);
+                Image[j * width + i] = convertVec3RGBA(mountains);
             }
         }
 
         // Save the frame
 
-        std::string filename = "demo5/cloud_frame_" + std::to_string(frame) + ".png";
+        std::string filename = "mountains/cloud_frame_" + std::to_string(frame) + ".png";
         saveImage(Image, filename.c_str(), width, height);
         std::cout << "Saved frame: " << filename << std::endl;
     }

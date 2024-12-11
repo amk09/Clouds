@@ -1,31 +1,18 @@
 cmake_minimum_required(VERSION 3.10)
-
-# Project name
 project(Clouds)
 
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-add_compile_options(-Wno-deprecated-declarations)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Add the main executable and necessary source files
-add_executable(Clouds main.cpp
-    camera.cpp
-    camera.h
-    src/rgba.h
-    src/backend.h
-    src/stb_image_write.h
-    Cloud.h
-    Cloud.cpp)
+# Find OpenMP
+find_package(OpenMP REQUIRED)
 
-# Include the glm headers
-# Assuming glm is a header-only library located in the glm directory
-target_include_directories(Clouds PRIVATE ${CMAKE_SOURCE_DIR}/glm)
+# Add the executable
+add_executable(cloud main.cpp camera.cpp terrain.cpp Cloud.cpp)
 
+# Link OpenMP
+target_link_libraries(cloud OpenMP::OpenMP_CXX)
 
-# Optionally enable optimizations for better performance
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
-endif()
-
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+# Suppress deprecated declarations warnings
+target_compile_options(cloud PRIVATE -Wno-deprecated-declarations)
