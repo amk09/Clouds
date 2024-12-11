@@ -160,7 +160,7 @@ static glm::vec3 rayMarch(const glm::vec3& cameraOrigin, const glm::vec3& camera
                             const std::vector<Light>& lights,
                             glm::vec3 skyColor=glm::vec3(0.f,0.f,0.f),
                             float baseY = 0.0f,
-                            float brightnessMultiplier = 2.0f) 
+                            float brightnessMultiplier = 5.0f) 
                             {
         Material mat = rayCast(cameraOrigin, cameraDir, baseY, NUM_STEPS, 1.0f, MAX_DIST);
 
