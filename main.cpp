@@ -43,8 +43,8 @@ int main(int argc, char* argv[])
     }
 
     // Output setup     
-    int height = 1080;
-    int width = 1920;
+    int height = 640;
+    int width = 480;
 
     glm::vec3 backgroundColor(0.f,0.f,0.f); //(0.5f, 0.7f, 1.0f); 
     std::vector<RGBA> Image(width * height, RGBA(0, 0, 0, 255));
@@ -109,8 +109,8 @@ int main(int argc, char* argv[])
     float off = 0.f;
     glm::vec3 rotationAxis(0.0f, 1.0f, 0.0f);
 
-    // for (int frame = 0; frame < frames_to_render; ++frame) 
-
+    for (int frame = 0; frame < frames_to_render; ++frame) 
+    {
         glm::vec3 cloudCenter(0.f, 3.f, -10.0f); 
         Cloud cloud1(cloudCenter, length1, breadth1, h1, densityOffset, shapeOffset , densityMultiplier, lightAbsorption);
         cloud1.shapeOffset.x = 2.f * frame_n; // Updating cloud positions
@@ -174,8 +174,7 @@ int main(int argc, char* argv[])
         std::string filename = "mountains/cloud_frame_" + std::to_string(frame_n) + ".png";
         saveImage(Image, filename.c_str(), width, height);
         std::cout << "Saved frame: " << filename << std::endl;
-
-
+    }
 
     return 0;
 }
