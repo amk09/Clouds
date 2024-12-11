@@ -231,55 +231,108 @@ inline glm::vec3 implicitWavySurfaceIntersect(const glm::vec3& rayOrigin, const 
 
 inline std::vector<Light> lights(int n, glm::vec3 center, float r, float offset, glm::vec3 rotationAxis) {
     std::vector<Light> ans;
-
+    
     // Normalize the rotation axis to ensure consistent behavior
     rotationAxis = glm::normalize(rotationAxis);
-
-    // Determine the base plane for light placement
+    
+    // Create an orthogonal coordinate system
     glm::vec3 baseVector1, baseVector2;
-    if (rotationAxis == glm::vec3(0.0f, 1.0f, 0.0f)) { // Y-axis rotation
-        baseVector1 = glm::vec3(1.0f, 0.0f, 0.0f);     // X direction
-        baseVector2 = glm::vec3(0.0f, 0.0f, 1.0f);     // Z direction
-    } else if (rotationAxis == glm::vec3(1.0f, 0.0f, 0.0f)) { // X-axis rotation
-        baseVector1 = glm::vec3(0.0f, 1.0f, 0.0f);     // Y direction
-        baseVector2 = glm::vec3(0.0f, 0.0f, 1.0f);     // Z direction
-    } else if (rotationAxis == glm::vec3(0.0f, 0.0f, 1.0f)) { // Z-axis rotation
-        baseVector1 = glm::vec3(1.0f, 0.0f, 0.0f);     // X direction
-        baseVector2 = glm::vec3(0.0f, 1.0f, 0.0f);     // Y direction
+    
+    // Use a robust method to create orthogonal base vectors
+    if (std::abs(glm::dot(rotationAxis, glm::vec3(1.0f, 0.0f, 0.0f))) < 0.9f) {
+        baseVector1 = glm::normalize(glm::cross(rotationAxis, glm::vec3(1.0f, 0.0f, 0.0f)));
     } else {
-        throw std::invalid_argument("Rotation axis must be one of the principal axes (X, Y, or Z).");
+        baseVector1 = glm::normalize(glm::cross(rotationAxis, glm::vec3(0.0f, 1.0f, 0.0f)));
     }
-
+    
+    // Second base vector is orthogonal to both rotation axis and first base vector
+    baseVector2 = glm::normalize(glm::cross(rotationAxis, baseVector1));
+    
     for (int i = 0; i < n; ++i) {
         // Compute the angle for this light in radians
         float angle = 2.0f * glm::pi<float>() * i / n + offset;
-
+        
         // Compute the initial position of the light in the determined base plane
-        glm::vec3 localPos = r * static_cast<float>(cos(angle)) * baseVector1 + 
-                             r * static_cast<float>(sin(angle)) * baseVector2;
-
+        glm::vec3 localPos = r * static_cast<float>(cos(angle)) * baseVector1 +
+                              r * static_cast<float>(sin(angle)) * baseVector2;
+        
         // Rotate the local position around the rotation axis
         glm::vec3 lightPos = glm::rotate(localPos, angle, rotationAxis);
-
+        
         // Translate the rotated position to the circle's center
         lightPos += center;
-
+        
         // Compute a unique color for this light
         glm::vec3 lightColor(
-            static_cast<float>(i) / n,                  // Red component
-            static_cast<float>((i + n / 3) % n) / n,   // Green component
-            static_cast<float>((i + 2 * n / 3) % n) / n // Blue component
+            static_cast<float>(i) / n,                      // Red component
+            static_cast<float>((i + n / 3) % n) / n,        // Green component
+            static_cast<float>((i + 2 * n / 3) % n) / n     // Blue component
         );
-
+        
         // Create a light with a fixed radius
         float lightRadius = 0.05f;
         Light light(lightPos, lightColor, lightRadius);
-
+        
         // Add the light to the vector
         ans.push_back(light);
     }
-
+    
     return ans;
 }
 
+inline glm::vec3 proceduralMountain(
+    const glm::vec3& rayOrigin,
+    const glm::vec3& rayDir,
+    const std::vector<Light>& lights,
+    const glm::vec3& surfaceBaseColor,
+    float terrainScale,
+    float terrainHeight,
+    float noiseFrequency,
+    float yBase // Base height for the terrain
+) {
+    // Check if the ray is parallel to the ground (ignoring small slopes)
+    if (glm::abs(rayDir.y) < 1e-6) {
+        return glm::vec3(0.0f, 0.0f, 0.0f); // No intersection
+    }
+
+    // Trace ray until it hits the terrain
+    glm::vec3 currentPoint = rayOrigin;
+    const float stepSize = 0.1f; // Adjust for ray marching precision
+    glm::vec3 finalColor(0.0f, 0.0f, 0.0f);
+
+    for (int steps = 0; steps < 1000; ++steps) {
+        // Compute the height of the terrain at the current point
+        float terrainHeightAtPoint = yBase + terrainHeight * glm::simplex(glm::vec2(currentPoint.x, currentPoint.z) * noiseFrequency);
+
+        // Check if the ray intersects the terrain
+        if (currentPoint.y <= terrainHeightAtPoint) {
+            // Surface normal using gradient approximation
+            glm::vec3 normal = glm::normalize(glm::vec3(
+                terrainHeight * (glm::simplex(glm::vec2(currentPoint.x + 1.0f, currentPoint.z) * noiseFrequency) -
+                                 glm::simplex(glm::vec2(currentPoint.x - 1.0f, currentPoint.z) * noiseFrequency)),
+                1.0f,
+                terrainHeight * (glm::simplex(glm::vec2(currentPoint.x, currentPoint.z + 1.0f) * noiseFrequency) -
+                                 glm::simplex(glm::vec2(currentPoint.x, currentPoint.z - 1.0f) * noiseFrequency))
+            ));
+
+            // Compute lighting
+            for (const auto& light : lights) {
+                glm::vec3 lightDir = glm::normalize(light.pos - currentPoint);
+                float diffuse = glm::max(glm::dot(normal, lightDir), 0.0f);
+
+                float distToLight = glm::length(light.pos - currentPoint);
+                float attenuation = glm::clamp(1.0f / (1.0f + distToLight * distToLight / (10.0f * 10.0f)), 0.0f, 1.0f);
+
+                finalColor += surfaceBaseColor * light.emissionColor * diffuse * attenuation;
+            }
+
+            return glm::clamp(finalColor, 0.0f, 1.0f); // Return the accumulated color
+        }
+
+        // March the ray
+        currentPoint += rayDir * stepSize;
+    }
+
+    return glm::vec3(0.0f, 0.0f, 0.0f); // No intersection within bounds
+}
 #endif // LIGHT_H
