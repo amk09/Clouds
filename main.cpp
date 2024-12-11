@@ -13,6 +13,10 @@
 #include "Cloud.h"
 #include "raymarcher.h"
 
+static float sat(float x) {
+        return glm::clamp(x, 0.0f, 1.0f);
+}
+
 int main(int argc, char* argv[])
 {
     // int frameBegin;
@@ -120,7 +124,8 @@ int main(int argc, char* argv[])
         // Light light1(lightPos, ligthColor, radius);
         
         
-        std::vector<Light> l = lights(5, glm::vec3(0.f,0.f,-20.f), 10.f, off,rotationAxis);
+        std::vector<Light> l = lights(2, glm::vec3(0.f,0.f,-5.f), 2.f, off,rotationAxis);
+        //Light lig(glm::vec3(0.f,0.f,-10.f),glm::vec3(1.0f,1.0f,1.0f),.5f);
         off += .05f;
 
 
@@ -143,6 +148,10 @@ int main(int argc, char* argv[])
                 for(auto x : l)
                     disp += x.lightSphereWithGlow(worldRayDir, camera.pos);
 
+                float skyFactor = std::exp(sat(worldRayDir.y) * -40.0f);
+                glm::vec3 skyColor = glm::exp(-worldRayDir.y / glm::vec3(0.025f, 0.0165f, 0.1f));
+                backgroundColor = glm::mix(skyColor, glm::vec3(0.025f, 0.0165f, 0.0f), skyFactor);    
+
                 // new addition
 
                 
@@ -156,8 +165,8 @@ int main(int argc, char* argv[])
                 //glm::vec3 surfColor = proceduralMountain(glm::vec3(worldEye), glm::vec3(worldRayDir),l,glm::vec3(1.f,1.f,1.f),20.f,2.f,.3f,-5.f);
                 //glm::vec3 surfColor = implicitPlaneIntersect(glm::vec3(worldEye), glm::vec3(worldRayDir),-5.f, light1.pos, light1.emissionColor, glm::vec3(1.f,1.f,1.f));
                 //glm::vec3 surfColor = implicitWavySurfaceIntersect(glm::vec3(worldEye), glm::vec3(worldRayDir), -5.f, light1.pos, light1.emissionColor, glm::vec3(1.f,1.f,1.f));
-                glm::vec3 color = RayMarcher::rayMarch(glm::vec3(worldEye), glm::vec3(worldRayDir),-0.5f);
-                Image[j * width + i] = convertVec3RGBA(color);
+                glm::vec3 color = RayMarcher::rayMarch(glm::vec3(worldEye), glm::vec3(worldRayDir), l,backgroundColor, -0.5f);
+                Image[j * width + i] = convertVec3RGBA(disp + color);
             }
         }
 

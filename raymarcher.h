@@ -92,15 +92,31 @@ private:
 
 
     // Lighting calculation
-    static glm::vec3 calculateLighting(const glm::vec3& pos, const glm::vec3& normal, 
-                                        const glm::vec3& lightColor, const glm::vec3& lightDir) {
-        float ambientStrength = 0.012f;
-        glm::vec3 ambient = ambientStrength * lightColor;
+static glm::vec3 calculateLighting(const glm::vec3& pos, const glm::vec3& normal, 
+                                        const std::vector<Light>& lights, 
+                                        float ambientStrength = 0.1f,
+                                        float brightnessMultiplier = 1.5f) {
+        glm::vec3 totalLighting(0.0f);
         
-        float diff = saturate(glm::dot(normal, lightDir));
-        glm::vec3 diffuse = diff * lightColor;
-
-        return ambient + diffuse;
+        // Ambient component
+        totalLighting += ambientStrength * glm::vec3(1.0f);
+        
+        // Iterate through all lights
+        for (const auto& light : lights) {
+            // Calculate light direction and distance
+            glm::vec3 lightDir = glm::normalize(light.pos - pos);
+            float lightDistance = glm::distance(light.pos, pos);
+            
+            // Diffuse calculation with distance falloff
+            float diff = std::max(glm::dot(normal, lightDir), 0.0f);
+            float distanceFalloff = 1.0f / (lightDistance * lightDistance + 1.0f);
+            
+            // Accumulate lighting from this light
+            totalLighting += diff * light.emissionColor * distanceFalloff;
+        }
+        
+        // Apply brightness multiplier
+        return glm::clamp(totalLighting * brightnessMultiplier, glm::vec3(0.0f), glm::vec3(1.0f));
     }
 
     // Ray casting
@@ -130,21 +146,28 @@ private:
         return mat;
     }
 
-    static float calculateShadow(const glm::vec3& pos, const glm::vec3& lightDir, float baseY) {
-    Material result = rayCast(pos, lightDir, baseY, 64, 0.01f, 10.0f);
-    return result.dist >= 0.0f ? 0.0f : 1.0f;
-}
+    static float calculateShadow(const glm::vec3& pos, const glm::vec3& lightPos, 
+                                  float baseY, int numSteps = 64, 
+                                  float startDist = 0.01f, float maxDist = 10.0f) {
+        glm::vec3 lightDir = glm::normalize(lightPos - pos);
+        Material result = rayCast(pos, lightDir, baseY, numSteps, startDist, maxDist);
+        return result.dist >= 0.0f ? 0.0f : 1.0f;
+    }
 
 public:
     // Main ray marching function
-        static glm::vec3 rayMarch(const glm::vec3& cameraOrigin, const glm::vec3& cameraDir, float baseY = 0.0f)
-         {
+static glm::vec3 rayMarch(const glm::vec3& cameraOrigin, const glm::vec3& cameraDir, 
+                            const std::vector<Light>& lights,
+                            glm::vec3 skyColor=glm::vec3(0.f,0.f,0.f),
+                            float baseY = 0.0f,
+                            float brightnessMultiplier = 1.5f) 
+                            {
         Material mat = rayCast(cameraOrigin, cameraDir, baseY, NUM_STEPS, 1.0f, MAX_DIST);
 
         // Sky color calculation
-        float skyFactor = std::exp(saturate(cameraDir.y) * -40.0f);
-        glm::vec3 skyColor = glm::exp(-cameraDir.y / glm::vec3(0.025f, 0.0165f, 0.1f));
-        skyColor = glm::mix(skyColor, glm::vec3(0.025f, 0.0165f, 0.0f), skyFactor);
+        // float skyFactor = std::exp(saturate(cameraDir.y) * -40.0f);
+        // glm::vec3 skyColor = glm::exp(-cameraDir.y / glm::vec3(0.025f, 0.0165f, 0.1f));
+        // skyColor = glm::mix(skyColor, glm::vec3(0.025f, 0.0165f, 0.0f), skyFactor);
         
         if (mat.dist < 0.0f) {
             return skyColor;
@@ -153,25 +176,25 @@ public:
         glm::vec3 pos = cameraOrigin + mat.dist * cameraDir;
         glm::vec3 normal = calculateNormal(pos, baseY);
 
-        glm::vec3 lightColor(1.0f);    
-        glm::vec3 lightDir = glm::normalize(glm::vec3(-0.5f, 0.2f, -0.6f));
-        float sunFactor = std::pow(saturate(glm::dot(lightDir, cameraDir)), 8.0f);
-        
-        // Updated shadow calculation to pass baseY
-        float shadowed = calculateShadow(pos, lightDir,baseY);
-        glm::vec3 lighting = calculateLighting(pos, normal, lightColor, lightDir);
+        float totalShadow = 0.0f;
+        for (const auto& light : lights) {
+            totalShadow += calculateShadow(pos, light.pos, baseY);
+        }
+        totalShadow = glm::clamp(totalShadow / lights.size(), 0.0f, 1.0f);
 
-        lighting *= shadowed;
+        // Calculate lighting from all lights
+        glm::vec3 lighting = calculateLighting(pos, normal, lights, 0.1f, brightnessMultiplier);
+
+        // Apply shadow
+        lighting *= totalShadow;
 
         glm::vec3 color = mat.color * lighting;
 
         // Fog Calculation
         float fogDist = glm::distance(cameraOrigin, pos);
-        float inscatter = 1.0f - std::exp(-fogDist * fogDist * glm::mix(0.0005f, 0.0001f, sunFactor));
+        float inscatter = 1.0f - std::exp(-fogDist * fogDist * 0.0003f);
         float extinction = std::exp(-fogDist * fogDist * 0.02f);
-        glm::vec3 fogColor = glm::mix(glm::vec3(0.025f, 0.0165f, 0.1f), 
-                                      glm::vec3(0.025f, 0.0165f, 0.3f), 
-                                      sunFactor);
+        glm::vec3 fogColor = glm::vec3(0.025f, 0.0165f, 0.1f);
 
         color = color * extinction + fogColor * inscatter;
         return color;
